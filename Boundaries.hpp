@@ -26,20 +26,7 @@
 #ifndef BOUNDARIES_HPP
 #define BOUNDARIES_HPP
 
-#if BOUNDARIES == BOUNDARIES_BONDI
-
-// Bondi specific boundary conditions are in Bondi.hpp
-#include "Bondi.hpp"
-
-#else // BOUNDARIES == BOUNDARIES_BONDI
-
-/**
- * @brief Initialize variables used for the boundary conditions.
- *
- * Open or reflective boundaries don't have associated variables, so this method
- * does nothing.
- */
-#define boundary_conditions_initialize()
+#include "SafeParameters.hpp"
 
 /**
  * @brief Apply boundary conditions after the primitive variable conversion.
@@ -92,7 +79,5 @@
           (cells[ncell]._midpoint - cells[ncell + 1]._midpoint);               \
   cells[ncell + 1]._grad_P = -cells[ncell]._grad_P;
 #endif
-
-#endif // BOUNDARIES == BOUNDARIES_BONDI
 
 #endif // BOUNDARIES_HPP

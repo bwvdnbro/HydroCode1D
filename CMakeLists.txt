@@ -45,28 +45,23 @@ check_configuration_option(ncell 2700)
 check_configuration_option(gamma 1.001)
 check_configuration_option(maxtime_in_yr 80.)
 check_configuration_option(number_of_snaps 4000)
-check_configuration_option(ic "IC_FILE")
-check_configuration_option(eos "EOS_BONDI")
-check_configuration_option(boundaries "BOUNDARIES_BONDI")
+check_configuration_option(eos "EOS_IDEAL")
+check_configuration_option(boundaries "BOUNDARIES_OPEN")
 check_configuration_option(isothermal_temperature_in_k 500.)
 check_configuration_option(potential "POTENTIAL_POINT_MASS")
 check_configuration_option(g_internal 1.)
 check_configuration_option(mass_point_mass_in_msol 18.)
-check_configuration_option(bondi_density_in_si 1.e-16)
-check_configuration_option(bondi_pressure_contrast 32.)
-check_configuration_option(ic_file_name "ic.dat")
-check_configuration_option(initial_ionisation_radius_in_au 30.)
 check_configuration_option(unit_mass_in_si 2.479e31)
 check_configuration_option(unit_length_in_si 1.2e13)
-check_configuration_option(ionisation_mode "IONISATION_MODE_SELF_CONSISTENT")
-check_configuration_option(ionisation_transition "IONISATION_TRANSITION_SMOOTH")
-check_configuration_option(ionisation_transition_width_in_au 5.)
 check_configuration_option(courant_factor 0.05)
 check_configuration_option(riemannsolver_type "RIEMANNSOLVER_TYPE_HLLC")
 check_configuration_option(dimensionality "DIMENSIONALITY_3D")
 
 configure_file(${PROJECT_SOURCE_DIR}/Parameters.hpp.in
                ${PROJECT_BINARY_DIR}/Parameters.hpp @only)
+
+configure_file(${PROJECT_SOURCE_DIR}/UserInput.hpp.in
+               ${PROJECT_BINARY_DIR}/UserInput.hpp COPYONLY)
 
 include_directories(${PROJECT_BINARY_DIR})
 

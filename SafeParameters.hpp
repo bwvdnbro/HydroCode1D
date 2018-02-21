@@ -45,8 +45,7 @@
 #ifndef BOUNDARIES
 #error "No boundary conditions selected!"
 #else
-#if BOUNDARIES != BOUNDARIES_OPEN && BOUNDARIES != BOUNDARIES_REFLECTIVE &&    \
-    BOUNDARIES != BOUNDARIES_BONDI
+#if BOUNDARIES != BOUNDARIES_OPEN && BOUNDARIES != BOUNDARIES_REFLECTIVE
 #pragma message(value_of_macro(BOUNDARIES))
 #error "Invalid boundary conditions selected!"
 #endif
@@ -56,7 +55,7 @@
 #ifndef EOS
 #error "No equation of state selected!"
 #else
-#if EOS != EOS_IDEAL && EOS != EOS_ISOTHERMAL && EOS != EOS_BONDI
+#if EOS != EOS_IDEAL && EOS != EOS_ISOTHERMAL
 #pragma message(value_of_macro(EOS))
 #error "Invalid equation of state selected!"
 #endif
@@ -69,38 +68,6 @@
 #if POTENTIAL != POTENTIAL_NONE && POTENTIAL != POTENTIAL_POINT_MASS
 #pragma message(value_of_macro(POTENTIAL))
 #error "Invalid potential selected!"
-#endif
-#endif
-
-// check the initial condition
-#ifndef IC
-#error "No initial condition selected!"
-#else
-#if IC != IC_SOD && IC != IC_BONDI && IC != IC_FILE && IC != IC_BLASTWAVES
-#pragma message(value_of_macro(IC))
-#error "Invalid initial condition selected!"
-#endif
-#endif
-
-// check ionisation mode
-#ifndef IONISATION_MODE
-#error "No ionisation mode selected!"
-#else
-#if IONISATION_MODE != IONISATION_MODE_SELF_CONSISTENT &&                      \
-    IONISATION_MODE != IONISATION_MODE_CONSTANT
-#pragma message(value_of_macro(IONISATION_MODE))
-#error "Invalid ionisation mode selected!"
-#endif
-#endif
-
-// check ionisation transition
-#ifndef IONISATION_TRANSITION
-#error "No ionisation transition type selected!"
-#else
-#if IONISATION_TRANSITION != IONISATION_TRANSITION_JUMP &&                     \
-    IONISATION_TRANSITION != IONISATION_TRANSITION_SMOOTH
-#pragma message(value_of_macro(IONISATION_TRANSITION))
-#error "Invalid ionisation transition type selected!"
 #endif
 #endif
 

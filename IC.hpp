@@ -26,16 +26,19 @@
 #ifndef IC_HPP
 #define IC_HPP
 
-#include "SafeParameters.hpp"
+#include "UserInput.hpp"
 
-#if IC == IC_BONDI
-#include "Bondi.hpp"
-#elif IC == IC_SOD
-#include "Sod.hpp"
-#elif IC == IC_FILE
-#include "ICFile.hpp"
-#elif IC == IC_BLASTWAVES
-#include "BlastWaves.hpp"
-#endif
+/**
+ * @brief Initialize the given cells.
+ *
+ * @param cells Cells to initialize.
+ * @param ncell Number of cells.
+ */
+#define initialize(cells, ncell)                                               \
+  _Pragma("omp parallel for") for (unsigned int i = 1; i < ncell + 1; ++i) {   \
+    get_initial_hydro_variables(cells[i]._midpoint, cells[i]._rho,             \
+                                cells[i]._u, cells[i]._P);                     \
+    cells[i]._a = 0.;                                                          \
+  }
 
 #endif // IC_HPP

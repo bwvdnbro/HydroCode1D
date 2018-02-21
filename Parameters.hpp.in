@@ -48,10 +48,6 @@
  *  configuration). */
 #define NUMBER_OF_SNAPS (@number_of_snaps@)
 
-/*! @brief Default width of the ionisation transition region (in AU; set by the
- *  configuration). */
-#define IONISATION_TRANSITION_WIDTH_IN_AU (@ionisation_transition_width_in_au@)
-
 /*! @brief Choice of boundary conditions (set by the configuration). */
 #define BOUNDARIES @boundaries@
 
@@ -73,38 +69,11 @@
  *  solar masses; set by the configuration). */
 #define MASS_POINT_MASS_IN_MSOL (@mass_point_mass_in_msol@)
 
-/*! @brief Switch off gradients (reduce to first order hydro scheme). */
-//#define NO_GRADIENTS
-
-/*! @brief Choice of initial conditions (set by the configuration). */
-#define IC @ic@
-
-/*! @brief Central density of the Bondi set up (in kg m^-3; set by the
- *  configuration). */
-#define BONDI_DENSITY_IN_SI (@bondi_density_in_si@)
-
-/*! @brief Default pressure contrast between ionised and neutral region (set by
- *  the configuration). */
-#define BONDI_PRESSURE_CONTRAST (@bondi_pressure_contrast@)
-
-/*! @brief Default name of the initial condition file (if IC_FILE is
- *  selected; set by the configuration). */
-#define IC_FILE_NAME "@ic_file_name@"
-
-/*! @brief Initial ionisation radius (in AU; set by the configuration). */
-#define INITIAL_IONISATION_RADIUS_IN_AU (@initial_ionisation_radius_in_au@)
-
 /*! @brief Mass unit (in kg; set by the configuration). */
 #define UNIT_MASS_IN_SI (@unit_mass_in_si@)
 
 /*! @brief Length unit (in m; set by the configuration). */
 #define UNIT_LENGTH_IN_SI (@unit_length_in_si@)
-
-/*! @brief Ionisation mode (set by the configuration). */
-#define IONISATION_MODE (@ionisation_mode@)
-
-/*! @brief Ionisation transition type (set by the configuration). */
-#define IONISATION_TRANSITION (@ionisation_transition@)
 
 /*! @brief Courant factor for the time step criterion. */
 #define COURANT_FACTOR (@courant_factor@)

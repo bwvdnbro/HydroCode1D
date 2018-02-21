@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 
 /**
  * @brief HLLC Riemann solver.

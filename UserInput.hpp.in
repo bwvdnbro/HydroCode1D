@@ -1,0 +1,7 @@
+inline void get_initial_hydro_variables(const double x, double &rho, double &u, double &P) {
+  // this function should set the values of rho, u and P to the initial values
+  // for the density, fluid velocity and pressure to the appropriate values,
+  // based on the given value of the 1D coordinate x
+  // all variables use SI coordinates
+#error "Implement this function!"
+}

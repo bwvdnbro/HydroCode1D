@@ -25,10 +25,9 @@
  */
 
 // project includes
-#include "Bondi.hpp"             // for EOS_BONDI, BOUNDARIES_BONDI, IC_BONDI
-#include "Boundaries.hpp"        // for non Bondi boundary conditions
+#include "Boundaries.hpp"        // for boundary conditions
 #include "Cell.hpp"              // Cell class
-#include "EOS.hpp"               // for non Bondi equations of state
+#include "EOS.hpp"               // for equations of state
 #include "HLLCRiemannSolver.hpp" // fast HLLC Riemann solver
 #include "IC.hpp"                // general initial condition interface
 #include "LogFile.hpp"           // log file output
@@ -266,20 +265,9 @@ static inline uint_fast64_t round_power2_down(uint_fast64_t x) {
 /**
  * @brief Main simulation program.
  *
- * Usage: ./HydroCodeSpherical1D [ncell [ic_file_name [transition_width
- *        [bondi_pressure_contrast] ] ] ]
+ * Usage: ./HydroCodeSpherical1D [ncell]
  * Valid command line arguments are:
  *  - ncell: Number of cells to use.
- *  - ic_file_name: Name of the initial condition file (if IC_FILE was selected
- *    when configuring the code). Note that the number of values in the file
- *    should match the value of "ncell".
- *  - transition_width: Width of the linear transition region between ionised
- *    and neutral region (if IONISATION_TRANSITION_SMOOTH was selected when
- *    configuring the code). Should be given in internal length units.
- *  - bondi_pressure_contrast: Pressure contrast between ionised and neutral
- *    region. The pressure contrast consist of the ratio of ionised and neutral
- *    temperature AND the factor two change in mean particle mass between
- *    ionised and neutral gas.
  *
  * @param argc Number of command line arguments.
  * @param argv Command line arguments.
@@ -292,81 +280,13 @@ int main(int argc, char **argv) {
   total_time.start();
 
   // initialize the optional parameters with their default values
-  // default values are given in Parameters.hpp.in, DerivedParameters.hpp and
-  // Bondi.hpp
+  // default values are given in Parameters.hpp.in and DerivedParameters.hpp
   unsigned int ncell = NCELL;
-  std::string ic_file_name(IC_FILE_NAME);
-  double transition_width = IONISATION_TRANSITION_WIDTH;
-  double bondi_pressure_contrast = BONDI_PRESSURE_CONTRAST;
-  // disable unused variable warnings
-  (void)bondi_pressure_contrast;
 
   // now overwrite with the actual command line parameters (if specified)
   if (argc > 1) {
     ncell = atoi(argv[1]);
   }
-  if (argc > 2) {
-    ic_file_name = argv[2];
-  }
-  if (argc > 3) {
-    transition_width = atof(argv[3]);
-  }
-  if (argc > 4) {
-    bondi_pressure_contrast = atof(argv[4]);
-  }
-
-  // output: most of this was useful at some point
-  std::cout << "Slope: " << (1.5 / transition_width) / UNIT_LENGTH_IN_SI
-            << std::endl;
-
-  std::cout << "UNIT_LENGTH_IN_SI: " << UNIT_LENGTH_IN_SI << std::endl;
-  std::cout << "UNIT_MASS_IN_SI: " << UNIT_MASS_IN_SI << std::endl;
-  std::cout << "UNIT_TIME_IN_SI: " << UNIT_TIME_IN_SI << std::endl;
-  std::cout << "UNIT_DENSITY_IN_SI: " << UNIT_DENSITY_IN_SI << std::endl;
-  std::cout << "UNIT_VELOCITY_IN_SI: " << UNIT_VELOCITY_IN_SI << std::endl;
-  std::cout << "UNIT_PRESSURE_IN_SI: " << UNIT_PRESSURE_IN_SI << std::endl;
-
-#if EOS == EOS_ISOTHERMAL || EOS == EOS_BONDI
-  std::cout << "Newton G: "
-            << G_INTERNAL *
-                   (UNIT_LENGTH_IN_SI * UNIT_LENGTH_IN_SI * UNIT_LENGTH_IN_SI /
-                    UNIT_MASS_IN_SI / UNIT_TIME_IN_SI / UNIT_TIME_IN_SI)
-            << " m^3 kg^-1 s^-2" << std::endl;
-  std::cout << "ISOTHERMAL_C_SQUARED: " << ISOTHERMAL_C_SQUARED << std::endl;
-  std::cout << "Neutral sound speed: "
-            << std::sqrt(ISOTHERMAL_C_SQUARED) * UNIT_VELOCITY_IN_SI
-            << " m s^-1" << std::endl;
-  std::cout << "Neutral temperature: "
-            << ISOTHERMAL_C_SQUARED * HYDROGEN_MASS_IN_SI *
-                   UNIT_VELOCITY_IN_SI * UNIT_VELOCITY_IN_SI / BOLTZMANN_K_IN_SI
-            << " K" << std::endl;
-  std::cout << "Neutral Bondi radius: " << RBONDI << " ("
-            << RBONDI * UNIT_LENGTH_IN_SI / AU_IN_SI << " AU)" << std::endl;
-  std::cout << "Density at R_Bondi: "
-            << bondi_density(RBONDI * UNIT_LENGTH_IN_SI / (20. * AU_IN_SI)) *
-                   UNIT_DENSITY_IN_SI
-            << std::endl;
-#endif
-
-  std::cout << "Initial ionisation radius: "
-            << INITIAL_IONISATION_RADIUS * UNIT_LENGTH_IN_SI / AU_IN_SI
-            << " AU (" << INITIAL_IONISATION_RADIUS << ")" << std::endl;
-
-  std::cout << "Point mass: " << MASS_POINT_MASS * UNIT_MASS_IN_SI << " kg"
-            << std::endl;
-
-  std::cout << "Useful units:" << std::endl;
-  std::cout << "Point mass: " << MASS_POINT_MASS * UNIT_MASS_IN_MSOL << " Msol"
-            << std::endl;
-  std::cout << "Total simulation time: " << MAXTIME * UNIT_TIME_IN_YR << " yr"
-            << std::endl;
-  std::cout << "Time in between snapshots: "
-            << (MAXTIME / NUMBER_OF_SNAPS) * UNIT_TIME_IN_YR << " yr "
-            << std::endl;
-  std::cout << "Minimum radius: " << RMIN * UNIT_LENGTH_IN_AU << " AU (" << RMIN
-            << ")" << std::endl;
-  std::cout << "Maximum radius: " << RMAX * UNIT_LENGTH_IN_AU << " AU (" << RMAX
-            << ")" << std::endl;
 
 // figure out how many threads we are using and tell the user about this
 #pragma omp parallel
@@ -406,9 +326,7 @@ int main(int argc, char **argv) {
   }
 
   // set up the initial condition
-  // this bit is handled by IC.hpp, and specific implementations in ICFile.hpp
-  // (if configured with IC_FILE), Bondi.hpp (if configured with IC_BONDI), or
-  // Sod.hpp (if configured with IC_SOD).
+  // this bit is handled by IC.hpp, and user specific code in UserInput.hpp
   initialize(cells, ncell);
 
   // Courant factor for the CFL time step criterion
@@ -425,7 +343,6 @@ int main(int argc, char **argv) {
   // convert primitive variables to conserved variables
   for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
     // apply the equation of state to get the initial pressure (if necessary)
-    // this bit is handled by EOS.hpp and Bondi.hpp (for EOS_BONDI)
     initial_pressure(cells[i]);
 
     // use the cell volume to convert primitive into conserved variables
@@ -462,12 +379,6 @@ int main(int argc, char **argv) {
     cells[i]._dt = cells[i]._integer_dt * time_conversion_factor;
   }
 
-  // initialize boundary condition and ionisation variables
-  // these bits are handled in EOS.hpp (and Bondi.hpp for EOS_BONDI), and
-  // Boundaries.hpp (and Bondi.hpp for BOUNDARIES_BONDI).
-  boundary_conditions_initialize();
-  ionisation_initialize();
-
 // initialize the Riemann solver
 // we use a fast HLLC solver
 // replace "HLLCRiemannSolver" with "RiemannSolver" to use a slower, exact
@@ -501,9 +412,6 @@ int main(int argc, char **argv) {
     // do first gravity kick, handled by Potential.hpp
     do_gravity();
 
-    // do ionisation, handled by EOS.hpp (and Bondi.hpp for EOS_BONDI).
-    do_ionisation();
-
     // update the primitive variables based on the values of the conserved
     // variables and the current cell volume
     // also compute the new time step
@@ -513,7 +421,7 @@ int main(int argc, char **argv) {
       cells[i]._rho = cells[i]._m / cells[i]._V;
       cells[i]._u = cells[i]._p / cells[i]._m;
       // the pressure update depends on the equation of state
-      // this is handled in EOS.hpp (and Bondi.hpp for EOS_BONDI)
+      // this is handled in EOS.hpp
       update_pressure(cells[i]);
       const double cs = std::sqrt(GAMMA * cells[i]._P / cells[i]._rho) +
                         std::abs(cells[i]._u);
@@ -558,12 +466,6 @@ int main(int argc, char **argv) {
       const double time_to_go = time_since_start * (100. - pct) / pct;
       std::cout << "\t\t\tEstimated time to go: " << time_to_go << " s"
                 << std::endl;
-#if EOS == EOS_BONDI
-      // we added this bit for the case where we want to add accreted material
-      // to the central mass (currently not used)
-      std::cout << "\t\t\tCentral mass: " << central_mass << " ("
-                << (central_mass / MASS_POINT_MASS) << ")" << std::endl;
-#endif
       // reset guesstimate counters
       time_since_last = 0.;
       steps_since_last = 0;
@@ -574,7 +476,7 @@ int main(int argc, char **argv) {
     }
 
     // apply boundary conditions
-    // handled by Boundaries.hpp (and Bondi.hpp for BOUNDARIES_BONDI)
+    // handled by Boundaries.hpp
     boundary_conditions_primitive_variables();
 
 // compute slope limited gradients for the primitive variables in each cell
@@ -629,7 +531,7 @@ int main(int argc, char **argv) {
     }
 
     // apply boundary conditions for the gradients
-    // handled by Boundaries.hpp (and Bondi.hpp for BOUNDARIES_BONDI)
+    // handled by Boundaries.hpp
     boundary_conditions_gradients();
 
 #ifdef NO_GRADIENTS
@@ -718,12 +620,6 @@ int main(int argc, char **argv) {
         cells[i]._m += dt * mflux;
         cells[i]._p += dt * pflux;
         cells[i]._E += dt * Eflux;
-
-        // call a special function for flux that crosses the inner outflow
-        // boundary. This currently does not do anything.
-        if (i == 1) {
-          flux_into_inner_mask(dt * mflux);
-        }
       }
       // right flux
       {
