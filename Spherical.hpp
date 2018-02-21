@@ -26,6 +26,14 @@
 #ifndef SPHERICAL_HPP
 #define SPHERICAL_HPP
 
+/*! @brief Norm of the correction source term in 2D and 3D radial symmetry
+ *  (this is the value \f$\alpha{}\f$ in Toro (2009) divided by 2). */
+#if DIMENSIONALITY == DIMENSIONALITY_2D
+#define DIMENSIONALITY_ALPHA 0.5
+#elif DIMENSIONALITY == DIMENSIONALITY_3D
+#define DIMENSIONALITY_ALPHA 1.
+#endif
+
 /**
  * @brief Add the spherical source terms.
  *
@@ -35,12 +43,12 @@
  */
 #if DIMENSIONALITY == DIMENSIONALITY_1D
 #define add_spherical_source_term()
-#elif DIMENSIONALITY == DIMENSIONALITY_3D
+#else
 #define add_spherical_source_term()                                            \
   _Pragma("omp parallel for") for (uint_fast32_t i = 1; i < ncell + 1; ++i) {  \
     if (cells[i]._m > 0.) {                                                    \
       const double r = cells[i]._midpoint;                                     \
-      const double rinv = 1. / r;                                              \
+      const double rinv = DIMENSIONALITY_ALPHA / r;                            \
       const double Vinv = 1. / cells[i]._V;                                    \
       const double dt = cells[i]._dt;                                          \
       const double Ui[3] = {cells[i]._m * Vinv, cells[i]._p * Vinv,            \

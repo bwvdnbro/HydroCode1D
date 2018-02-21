@@ -30,13 +30,11 @@
 #include "EOS.hpp"               // for equations of state
 #include "HLLCRiemannSolver.hpp" // fast HLLC Riemann solver
 #include "IC.hpp"                // general initial condition interface
-#include "LogFile.hpp"           // log file output
 #include "Potential.hpp"         // external gravity
 #include "RiemannSolver.hpp"     // slow exact Riemann solver
 #include "SafeParameters.hpp"    // safe way to include Parameter.hpp
 #include "Spherical.hpp"         // spherical source terms
 #include "Timer.hpp"             // program timers
-#include "Units.hpp"             // unit information
 
 // standard libraries
 #include <cfloat>
@@ -47,9 +45,6 @@
 #include <iostream>
 #include <omp.h>
 #include <sstream>
-
-/*! @brief Activate this to disable fancy log output. */
-#define NO_LOGFILE
 
 /**
  * @brief Get the current time as a string.
@@ -101,146 +96,13 @@ void write_snapshot(uint_fast64_t istep, double time, const Cell *cells,
   filename << ".txt";
   std::cout << "Writing snapshot " << filename.str() << std::endl;
   std::ofstream ofile(filename.str().c_str());
-  ofile << "# time: " << time * UNIT_TIME_IN_SI << "\n";
+  ofile << "# time: " << time << " s\n";
+  ofile << "# x (m)\trho (kg m^-3)\tu (m s^-1)\tP (kg m^-1 s^-2)\n";
   for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
-    ofile << cells[i]._midpoint * UNIT_LENGTH_IN_SI << "\t"
-          << cells[i]._rho * UNIT_DENSITY_IN_SI << "\t"
-          << cells[i]._u * UNIT_VELOCITY_IN_SI << "\t"
-          << cells[i]._P * UNIT_PRESSURE_IN_SI << "\t" << cells[i]._nfac
-          << "\n";
+    ofile << cells[i]._midpoint << "\t" << cells[i]._rho << "\t" << cells[i]._u
+          << "\t" << cells[i]._P << "\n";
   }
   ofile.close();
-}
-
-/**
- * @brief Write a binary snapshot that can be used as initial condition file.
- *
- * @param cells Cells to write.
- * @param ncell Number of cells.
- */
-void write_binary_snapshot(const Cell *cells, const unsigned int ncell) {
-  std::ofstream ofile("lastsnap.dat");
-  for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
-    ofile.write(reinterpret_cast<const char *>(&cells[i]._rho), sizeof(double));
-    ofile.write(reinterpret_cast<const char *>(&cells[i]._u), sizeof(double));
-    ofile.write(reinterpret_cast<const char *>(&cells[i]._P), sizeof(double));
-    ofile.write(reinterpret_cast<const char *>(&cells[i]._a), sizeof(double));
-  }
-}
-
-/**
- * @brief Practical names for log entry numbers.
- */
-enum LogEntry {
-  LOGENTRY_DENSITY = 0,
-  LOGENTRY_VELOCITY,
-  LOGENTRY_PRESSURE,
-  LOGENTRY_NFRAC,
-  NUMBER_OF_LOGENTRIES
-};
-
-/**
- * @brief Check if the value for the given log entry variable has changed
- * significantly since the last output.
- *
- * @param logentry Log entry identifier.
- * @param cell Cell to check.
- */
-static inline bool changed(const int logentry, const Cell &cell) {
-  // tolerance: If the relative difference of the value and the last outputted
-  // value is less than this value, no output is written
-  // Should probably become a parameter at some point...
-  static const double tol = 1.e-3;
-  switch (logentry) {
-  case LOGENTRY_DENSITY:
-    return std::abs(cell._rho - cell._last_rho) >
-           tol * std::abs(cell._rho + cell._last_rho);
-  case LOGENTRY_VELOCITY:
-    return std::abs(cell._u - cell._last_u) >
-           tol * std::abs(cell._u + cell._last_u);
-  case LOGENTRY_PRESSURE:
-    return std::abs(cell._P - cell._last_P) >
-           tol * std::abs(cell._P + cell._last_P);
-  case LOGENTRY_NFRAC:
-    return std::abs(cell._nfac - cell._last_nfac) >
-           tol * std::abs(cell._nfac + cell._last_nfac);
-  default:
-    return false;
-  }
-}
-
-/**
- * @brief Get the value for the given log entry variable.
- *
- * @param logentry Log entry identifier.
- * @param cell Cell for which we want the variable.
- * @return Value of the variable.
- */
-static inline double get_value(const int logentry, Cell &cell) {
-  switch (logentry) {
-  case LOGENTRY_DENSITY:
-    cell._last_rho = cell._rho;
-    return cell._rho * UNIT_DENSITY_IN_SI;
-  case LOGENTRY_VELOCITY:
-    cell._last_u = cell._u;
-    return cell._u * UNIT_VELOCITY_IN_SI;
-  case LOGENTRY_PRESSURE:
-    cell._last_P = cell._P;
-    return cell._P * UNIT_PRESSURE_IN_SI;
-  case LOGENTRY_NFRAC:
-    cell._last_nfac = cell._nfac;
-    return cell._nfac;
-  default:
-    return 0.;
-  }
-}
-
-/**
- * @brief Write significantly changed variables to the log file.
- *
- * @param log LogFile to write to.
- * @param cells Cells to write.
- * @param ncell Number of cells.
- * @param time Current simulation time (in internal units of T).
- * @param full_dump If set to True, dumps all cells irrespective of variable
- * changes.
- */
-static inline void write_logfile(LogFile &log, Cell *cells,
-                                 const unsigned int ncell, const double time,
-                                 bool full_dump = false) {
-#ifndef NO_LOGFILE
-  if (full_dump) {
-    // full dump: write all particles
-    for (uint_fast16_t i = 1; i < ncell + 1; ++i) {
-      for (int logentry = 0; logentry < NUMBER_OF_LOGENTRIES; ++logentry) {
-        unsigned long previous_entry = cells[i]._last_entry;
-        cells[i]._last_entry = log.get_current_position();
-        previous_entry = cells[i]._last_entry - previous_entry;
-        log.write(previous_entry);
-        log.write(cells[i]._index);
-        log.write(logentry);
-        log.write(time);
-        log.write(get_value(logentry, cells[i]));
-      }
-    }
-  } else {
-    // only write interesting quantities
-    for (uint_fast16_t i = 1; i < ncell + 1; ++i) {
-      for (int logentry = 0; logentry < NUMBER_OF_LOGENTRIES; ++logentry) {
-        if (changed(logentry, cells[i])) {
-          unsigned long previous_entry = cells[i]._last_entry;
-          cells[i]._last_entry = log.get_current_position();
-          previous_entry = cells[i]._last_entry - previous_entry;
-          log.write(previous_entry);
-          log.write(cells[i]._index);
-          log.write(logentry);
-          log.write(time);
-          log.write(get_value(logentry, cells[i]));
-        }
-      }
-    }
-  }
-#endif // NO_LOGFILE
 }
 
 /**
@@ -265,9 +127,10 @@ static inline uint_fast64_t round_power2_down(uint_fast64_t x) {
 /**
  * @brief Main simulation program.
  *
- * Usage: ./HydroCodeSpherical1D [ncell]
- * Valid command line arguments are:
- *  - ncell: Number of cells to use.
+ * Usage: ./HydroCode1D
+ *
+ * This program takes no command line arguments; all parameters need to be
+ * configured at compilation time.
  *
  * @param argc Number of command line arguments.
  * @param argv Command line arguments.
@@ -279,14 +142,7 @@ int main(int argc, char **argv) {
   Timer total_time;
   total_time.start();
 
-  // initialize the optional parameters with their default values
-  // default values are given in Parameters.hpp.in and DerivedParameters.hpp
-  unsigned int ncell = NCELL;
-
-  // now overwrite with the actual command line parameters (if specified)
-  if (argc > 1) {
-    ncell = atoi(argv[1]);
-  }
+  const unsigned int ncell = NCELL;
 
 // figure out how many threads we are using and tell the user about this
 #pragma omp parallel
@@ -366,10 +222,6 @@ int main(int argc, char **argv) {
     cells[i]._last_entry = 0;
   }
 
-  // initialize the log file and write the first entry
-  LogFile logfile("logfile.dat", 100);
-  write_logfile(logfile, cells, ncell, 0., true);
-
   // set cell time steps
   // round min_integer_dt to closest smaller power of 2
   uint_fast64_t global_integer_dt = round_power2_down(min_integer_dt);
@@ -429,10 +281,6 @@ int main(int argc, char **argv) {
       const uint_fast64_t integer_dt = (dt / maxtime) * integer_maxtime;
       min_integer_dt = std::min(min_integer_dt, integer_dt);
     }
-
-    // now is the time to write to the log file
-    write_logfile(logfile, cells, ncell,
-                  current_integer_time * time_conversion_factor);
 
     // round min_integer_dt to closest smaller power of 2
     global_integer_dt = round_power2_down(min_integer_dt);
@@ -684,16 +532,9 @@ int main(int argc, char **argv) {
     current_integer_time += current_integer_dt;
   }
 
-  // write the final logfile entry
-  write_logfile(logfile, cells, ncell,
-                current_integer_time * time_conversion_factor, true);
-  // close the log file
-  logfile.close_file();
-
   // write the final snapshots
   write_snapshot(isnap, current_integer_time * time_conversion_factor, cells,
                  ncell);
-  write_binary_snapshot(cells, ncell);
 
   // clean up: free cell memory
   delete[] cells;

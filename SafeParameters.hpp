@@ -45,7 +45,8 @@
 #ifndef BOUNDARIES
 #error "No boundary conditions selected!"
 #else
-#if BOUNDARIES != BOUNDARIES_OPEN && BOUNDARIES != BOUNDARIES_REFLECTIVE
+#if BOUNDARIES != BOUNDARIES_OPEN && BOUNDARIES != BOUNDARIES_REFLECTIVE &&    \
+    BOUNDARIES != BOUNDARIES_PERIODIC && BOUNDARIES != BOUNDARIES_CUSTOM
 #pragma message(value_of_macro(BOUNDARIES))
 #error "Invalid boundary conditions selected!"
 #endif
@@ -86,10 +87,18 @@
 #ifndef DIMENSIONALITY
 #error "No dimensionality selected!"
 #else
-#if DIMENSIONALITY != DIMENSIONALITY_1D && DIMENSIONALITY != DIMENSIONALITY_3D
+#if DIMENSIONALITY != DIMENSIONALITY_1D &&                                     \
+    DIMENSIONALITY != DIMENSIONALITY_2D && DIMENSIONALITY != DIMENSIONALITY_3D
 #pragma message(value_of_macro(DIMENSIONALITY))
 #error "Invalid dimensionality selected!"
 #endif
+#endif
+
+// check that we are not setting periodic boundaries in 2D and 3D
+#if BOUNDARIES == BOUNDARIES_PERIODIC &&                                       \
+    (DIMENSIONALITY == DIMENSIONALITY_2D ||                                    \
+     DIMENSIONALITY == DIMENSIONALITY_3D)
+#error "Periodic boundary conditions only work with DIMENSIONALITY_1D!"
 #endif
 
 // include derived parameters

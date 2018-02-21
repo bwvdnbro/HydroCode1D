@@ -1,7 +1,37 @@
-inline void get_initial_hydro_variables(const double x, double &rho, double &u, double &P) {
+inline void get_initial_hydro_variables(const double x, double &rho, double &u,
+                                        double &P) {
   // this function should set the values of rho, u and P to the initial values
   // for the density, fluid velocity and pressure to the appropriate values,
   // based on the given value of the 1D coordinate x
   // all variables use SI coordinates
 #error "Implement this function!"
 }
+
+#if BOUNDARIES == BOUNDARIES_CUSTOM
+inline void get_left_boundary(const double rho_left, const double u_left,
+                              const double P_left, double &rho_ghost,
+                              double &u_ghost, double &P_ghost) {
+  // this function should set the values of rho_ghost, u_ghost and P_ghost to
+  // correct values for the left boundary of the simulation box
+  // It can use the values in the cell next to the boundary.
+  // Examples:
+  //  Open boundary: rho_ghost = rho_left; u_ghost = u_left; P_ghost = P_left;
+  //  Reflective boundary: rho_ghost = rho_left; u_ghost = -u_left;
+  //                       P_ghost = P_left;
+#error "Implement this function!"
+}
+
+inline void get_right_boundary(const double rho_right, const double u_right,
+                               const double P_right, double &rho_ghost,
+                               double &u_ghost, double &P_ghost) {
+  // this function should set the values of rho_ghost, u_ghost and P_ghost to
+  // correct values for the right boundary of the simulation box
+  // It can use the values in the cell next to the boundary.
+  // Examples:
+  //  Open boundary: rho_ghost = rho_right; u_ghost = u_right;
+  //                 P_ghost = P_right;
+  //  Reflective boundary: rho_ghost = rho_right; u_ghost = -u_right;
+  //                       P_ghost = P_right;
+#error "Implement this function!"
+}
+#endif

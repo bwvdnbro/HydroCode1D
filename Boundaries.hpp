@@ -49,6 +49,21 @@
   cells[ncell + 1]._rho = cells[ncell]._rho;                                   \
   cells[ncell + 1]._u = -cells[ncell]._u;                                      \
   cells[ncell + 1]._P = cells[ncell]._P;
+#elif BOUNDARIES == BOUNDARIES_PERIODIC
+#define boundary_conditions_primitive_variables()                              \
+  cells[0]._rho = cells[ncell]._rho;                                           \
+  cells[0]._u = cells[ncell]._u;                                               \
+  cells[0]._P = cells[ncell]._P;                                               \
+  cells[ncell + 1]._rho = cells[1]._rho;                                       \
+  cells[ncell + 1]._u = cells[1]._u;                                           \
+  cells[ncell + 1]._P = cells[1]._P;
+#elif BOUNDARIES == BOUNDARIES_CUSTOM
+#define boundary_conditions_primitive_variables()                              \
+  get_left_boundary(cells[1]._rho, cells[1]._u, cells[1]._P, cells[0]._rho,    \
+                    cells[0]._u, cells[0]._P);                                 \
+  get_right_boundary(cells[ncell]._rho, cells[ncell]._u, cells[ncell]._P,      \
+                     cells[ncell + 1]._rho, cells[ncell + 1]._u,               \
+                     cells[ncell + 1]._P);
 #endif
 
 /**
@@ -78,6 +93,23 @@
       4. * cells[ncell]._u /                                                   \
           (cells[ncell]._midpoint - cells[ncell + 1]._midpoint);               \
   cells[ncell + 1]._grad_P = -cells[ncell]._grad_P;
+#elif BOUNDARIES == BOUNDARIES_PERIODIC
+#define boundary_conditions_gradients()                                        \
+  cells[0]._grad_rho = cells[ncell]._grad_rho;                                 \
+  cells[0]._grad_u = cells[ncell]._grad_u;                                     \
+  cells[0]._grad_P = cells[ncell]._grad_P;                                     \
+  cells[ncell + 1]._grad_rho = cells[1]._grad_rho;                             \
+  cells[ncell + 1]._grad_u = cells[1]._grad_u;                                 \
+  cells[ncell + 1]._grad_P = cells[1]._grad_P;
+#elif BOUNDARIES == BOUNDARIES_CUSTOM
+#define boundary_conditions_gradients()                                        \
+  /* set all gradients to 0 for now */                                         \
+  cells[0]._grad_rho = 0.;                                                     \
+  cells[0]._grad_u = 0.;                                                       \
+  cells[0]._grad_P = 0.;                                                       \
+  cells[ncell + 1]._grad_rho = 0.;                                             \
+  cells[ncell + 1]._grad_u = 0.;                                               \
+  cells[ncell + 1]._grad_P = 0.;
 #endif
 
 #endif // BOUNDARIES_HPP

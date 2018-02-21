@@ -33,6 +33,12 @@
 #define BOUNDARIES_OPEN 1
 /*! @brief Reflective boundaries: outgoing flows are reflected inwards. */
 #define BOUNDARIES_REFLECTIVE 2
+/*! @brief Periodic boundaries: outgoing flows enter the box through the other
+ *  side (note that this only works for 1D). */
+#define BOUNDARIES_PERIODIC 3
+/*! @brief Custom boundaries: boundary conditions are provided by the user in
+ *  (UserInput.hpp). */
+#define BOUNDARIES_CUSTOM 4
 
 // Possible types of equation of state.
 
@@ -59,7 +65,9 @@
 
 /*! @brief 1D solver. */
 #define DIMENSIONALITY_1D 1
+/*! @brief 2D spherically symmetric solver. */
+#define DIMENSIONALITY_2D 2
 /*! @brief 3D spherically symmetric solver. */
-#define DIMENSIONALITY_3D 2
+#define DIMENSIONALITY_3D 3
 
 #endif // OPTIONNAMES_HPP

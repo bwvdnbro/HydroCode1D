@@ -28,10 +28,10 @@
 #define PARAMETERS_HPP
 
 /*! @brief Minimum radius (in AU; set by the configuration). */
-#define RMIN_IN_AU (@rmin_in_au@)
+#define RMIN_IN_M (@rmin_in_m@)
 
 /*! @brief Maximum radius (in AU; set by the configuration). */
-#define RMAX_IN_AU (@rmax_in_au@)
+#define RMAX_IN_M (@rmax_in_m@)
 
 /*! @brief Default number of spherical shells (1D "cells") in between RMIN and
  *  RMAX (set by configuration). Can be overwritten by a command line
@@ -42,7 +42,7 @@
 #define GAMMA (@gamma@)
 
 /*! @brief Maximum simulation time (in years; set by the configuration). */
-#define MAXTIME_IN_YR (@maxtime_in_yr@)
+#define MAXTIME_IN_S (@maxtime_in_s@)
 
 /*! @brief Number of snapshots to write during the simulation (set by the
  *  configuration). */
@@ -67,13 +67,7 @@
 
 /*! @brief Mass of the point mass (if POTENTIAL_POINT_MASS is selected; in
  *  solar masses; set by the configuration). */
-#define MASS_POINT_MASS_IN_MSOL (@mass_point_mass_in_msol@)
-
-/*! @brief Mass unit (in kg; set by the configuration). */
-#define UNIT_MASS_IN_SI (@unit_mass_in_si@)
-
-/*! @brief Length unit (in m; set by the configuration). */
-#define UNIT_LENGTH_IN_SI (@unit_length_in_si@)
+#define MASS_POINT_MASS_IN_KG (@mass_point_mass_in_kg@)
 
 /*! @brief Courant factor for the time step criterion. */
 #define COURANT_FACTOR (@courant_factor@)
