@@ -1,21 +1,22 @@
 #! /usr/bin/python
 
 ################################################################################
-# This file is part of HydroCodeSpherical1D
+# This file is part of HydroCode1D
 # Copyright (C) 2017 Bert Vandenbroucke (bert.vandenbroucke@gmail.com)
+#               2018 Bert Vandenbroucke (bert.vandenbroucke@gmail.com)
 #
-# HydroCodeSpherical1D is free software: you can redistribute it and/or modify
+# HydroCode1D is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# HydroCodeSpherical1D is distributed in the hope that it will be useful,
+# HydroCode1D is distributed in the hope that it will be useful,
 # but WITOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
-# along with HydroCodeSpherical1D. If not, see <http://www.gnu.org/licenses/>.
+# along with HydroCode1D. If not, see <http://www.gnu.org/licenses/>.
 ################################################################################
 
 ##
@@ -30,30 +31,22 @@
 # default options: do not touch this!
 
 configuration_options = {
-"rmin_in_au": 10.,
-"rmax_in_au": 100.,
-"ncell": 2700,
-"gamma": 1.001,
-"maxtime_in_yr": 80.,
-"number_of_snaps": 4000,
-"ic": "IC_FILE",
-"eos": "EOS_BONDI",
-"boundaries": "BOUNDARIES_BONDI",
+"rmin_in_m": 0.,
+"rmax_in_m": 1.,
+"ncell": 1000,
+"gamma": 5./3.,
+"maxtime_in_s": 1.,
+"number_of_snaps": 1,
+"eos": "EOS_IDEAL",
+"boundaries": "BOUNDARIES_OPEN",
 "isothermal_temperature_in_k": 500.,
 "potential": "POTENTIAL_POINT_MASS",
 "g_internal": 1.,
-"mass_point_mass_in_msol": 18.,
-"bondi_density_in_si": 1.e-16,
-"bondi_pressure_contrast": 32.,
-"ic_file_name": "ic.dat",
-"initial_ionisation_radius_in_au": 30.,
-"unit_mass_in_si": 2.479e31,
-"unit_length_in_si": 1.2e13,
-"ionisation_mode": "IONISATION_MODE_SELF_CONSISTENT",
-"ionisation_transition": "IONISATION_TRANSITION_SMOOTH",
-"ionisation_transition_width_in_au": 5.,
-"courant_factor": 0.05,
-"riemannsolver_type": "RIEMANNSOLVER_TYPE_HLLC",
+"mass_point_mass_in_kg": 1.,
+"courant_factor": 0.4,
+"riemannsolver_type": "RIEMANNSOLVER_TYPE_EXACT",
+"dimensionality": "DIMENSIONALITY_1D",
+"hydro_order": "HYDRO_ORDER_2",
 }
 
 ##
@@ -86,5 +79,8 @@ def get_cmake_command(custom_options = {}, folder = ".."):
 
   return command
 
+##
+# @brief Get the default CMake configuration command.
+##
 if __name__ == "__main__":
   print get_cmake_command()
