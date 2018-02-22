@@ -1,19 +1,20 @@
 ################################################################################
-# This file is part of HydroCodeSpherical1D
+# This file is part of HydroCode1D
 # Copyright (C) 2017 Bert Vandenbroucke (bert.vandenbroucke@gmail.com)
+#               2018 Bert Vandenbroucke (bert.vandenbroucke@gmail.com)
 #
-# HydroCodeSpherical1D is free software: you can redistribute it and/or modify
+# HydroCode1D is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# HydroCodeSpherical1D is distributed in the hope that it will be useful,
+# HydroCode1D is distributed in the hope that it will be useful,
 # but WITOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
-# along with HydroCodeSpherical1D. If not, see <http://www.gnu.org/licenses/>.
+# along with HydroCode1D. If not, see <http://www.gnu.org/licenses/>.
 ################################################################################
 
 cmake_minimum_required(VERSION 2.8)
@@ -21,9 +22,26 @@ cmake_minimum_required(VERSION 2.8)
 project(HydroCode1D)
 
 set(SOURCES
-    main_spherical.cpp
+    HydroCode1D.cpp
 
+    Boundaries.hpp
+    Cell.hpp
+    DerivedParameters.hpp
+    EOS.hpp
+    HLLCRiemannSolver.hpp
+    IC.hpp
+    LambertW.hpp
+    LogFile.hpp
+    OptionNames.hpp
+    PhysicalConstants.hpp
+    Potential.hpp
     RiemannSolver.hpp
+    SafeParameters.hpp
+    Spherical.hpp
+    Timer.hpp
+
+    UserInput.hpp.in
+    UserInput.hpp.sod
 )
 
 # macro that checks if a configuration value was set on the command line
@@ -54,6 +72,7 @@ check_configuration_option(mass_point_mass_in_kg 18.)
 check_configuration_option(courant_factor 0.05)
 check_configuration_option(riemannsolver_type "RIEMANNSOLVER_TYPE_HLLC")
 check_configuration_option(dimensionality "DIMENSIONALITY_3D")
+check_configuration_option(hydro_order "HYDRO_ORDER_2")
 
 configure_file(${PROJECT_SOURCE_DIR}/Parameters.hpp.in
                ${PROJECT_BINARY_DIR}/Parameters.hpp @only)

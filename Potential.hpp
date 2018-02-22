@@ -1,19 +1,20 @@
 /*******************************************************************************
- * This file is part of HydroCodeSpherical1D
+ * This file is part of HydroCode1D
  * Copyright (C) 2017 Bert Vandenbroucke (bert.vandenbroucke@gmail.com)
+ *               2018 Bert Vandenbroucke (bert.vandenbroucke@gmail.com)
  *
- * HydroCodeSpherical1D is free software: you can redistribute it and/or modify
+ * HydroCode1D is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * HydroCodeSpherical1D is distributed in the hope that it will be useful,
+ * HydroCode1D is distributed in the hope that it will be useful,
  * but WITOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with HydroCodeSpherical1D. If not, see <http://www.gnu.org/licenses/>.
+ * along with HydroCode1D. If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
 /**
@@ -28,9 +29,12 @@
 
 /**
  * @brief Add the gravitational acceleration.
+ *
+ * @param cells Cells to update.
+ * @param ncell Number of cells.
  */
 #if POTENTIAL == POTENTIAL_POINT_MASS
-#define do_gravity() /* add gravitational acceleration */                      \
+#define do_gravity(cells, ncell) /* add gravitational acceleration */          \
   _Pragma("omp parallel for") for (uint_fast32_t i = 1; i < ncell + 1; ++i) {  \
     const double m = cells[i]._V * cells[i]._rho;                              \
     cells[i]._p += 0.5 * cells[i]._dt * cells[i]._a * m;                       \
@@ -44,7 +48,7 @@
     cells[i]._p += 0.5 * DT * a * m; \*/                                       \
   }
 #elif POTENTIAL == POTENTIAL_NONE
-#define do_gravity()
+#define do_gravity(cells, ncell)
 #endif
 
 /**

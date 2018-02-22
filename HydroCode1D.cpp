@@ -1,19 +1,20 @@
 /*******************************************************************************
- * This file is part of HydroCodeSpherical1D
+ * This file is part of HydroCode1D
  * Copyright (C) 2017 Bert Vandenbroucke (bert.vandenbroucke@gmail.com)
+ *               2018 Bert Vandenbroucke (bert.vandenbroucke@gmail.com)
  *
- * HydroCodeSpherical1D is free software: you can redistribute it and/or modify
+ * HydroCode1D is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * HydroCodeSpherical1D is distributed in the hope that it will be useful,
+ * HydroCode1D is distributed in the hope that it will be useful,
  * but WITOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with HydroCodeSpherical1D. If not, see <http://www.gnu.org/licenses/>.
+ * along with HydroCode1D. If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
 /**
@@ -249,10 +250,10 @@ int main(int argc, char **argv) {
     step_time.start();
 
     // add the spherical source term. Handled by Spherical.hpp
-    add_spherical_source_term();
+    add_spherical_source_term(cells, ncell);
 
     // do first gravity kick, handled by Potential.hpp
-    do_gravity();
+    do_gravity(cells, ncell);
 
     // update the primitive variables based on the values of the conserved
     // variables and the current cell volume
@@ -315,8 +316,9 @@ int main(int argc, char **argv) {
 
     // apply boundary conditions
     // handled by Boundaries.hpp
-    boundary_conditions_primitive_variables();
+    boundary_conditions_primitive_variables(cells, ncell);
 
+#if HYDRO_ORDER == HYDRO_ORDER_2
 // compute slope limited gradients for the primitive variables in each cell
 #pragma omp parallel for
     for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
@@ -370,17 +372,7 @@ int main(int argc, char **argv) {
 
     // apply boundary conditions for the gradients
     // handled by Boundaries.hpp
-    boundary_conditions_gradients();
-
-#ifdef NO_GRADIENTS
-// reset all gradients to zero to disable the second order scheme
-#pragma omp parallel for
-    for (uint_fast32_t i = 0; i < ncell + 2; ++i) {
-      cells[i]._grad_rho = 0.;
-      cells[i]._grad_u = 0.;
-      cells[i]._grad_P = 0.;
-    }
-#endif
+    boundary_conditions_gradients(cells, ncell);
 
 // evolve all primitive variables forward in time for half a time step
 // using the Euler equations and the spatial gradients within the cells
@@ -409,6 +401,18 @@ int main(int argc, char **argv) {
       // add gravity prediction. Handled by Potential.hpp.
       add_gravitational_prediction(cells[i], half_dt);
     }
+
+#elif HYDRO_ORDER == HYDRO_ORDER_1
+
+// set all gradients to zero to disable the second order scheme
+#pragma omp parallel for
+    for (uint_fast32_t i = 0; i < ncell + 2; ++i) {
+      cells[i]._grad_rho = 0.;
+      cells[i]._grad_u = 0.;
+      cells[i]._grad_P = 0.;
+    }
+
+#endif
 
 // do the flux exchange
 // to avoid thread concurrency, we compute each flux twice, and only update one
@@ -506,11 +510,11 @@ int main(int argc, char **argv) {
 
     // add the spherical source term
     // handled by Spherical.hpp
-    add_spherical_source_term();
+    add_spherical_source_term(cells, ncell);
 
     // do the second gravity kick
     // handled by Potential.hpp
-    do_gravity();
+    do_gravity(cells, ncell);
 
     // stop the step timer, and update guesstimate counters
     step_time.stop();

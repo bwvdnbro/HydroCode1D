@@ -1,19 +1,20 @@
 /*******************************************************************************
- * This file is part of HydroCodeSpherical1D
+ * This file is part of HydroCode1D
  * Copyright (C) 2017 Bert Vandenbroucke (bert.vandenbroucke@gmail.com)
+ *               2018 Bert Vandenbroucke (bert.vandenbroucke@gmail.com)
  *
- * HydroCodeSpherical1D is free software: you can redistribute it and/or modify
+ * HydroCode1D is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * HydroCodeSpherical1D is distributed in the hope that it will be useful,
+ * HydroCode1D is distributed in the hope that it will be useful,
  * but WITOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with HydroCodeSpherical1D. If not, see <http://www.gnu.org/licenses/>.
+ * along with HydroCode1D. If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
 /**
@@ -26,6 +27,11 @@
  */
 #ifndef PARAMETERS_HPP
 #define PARAMETERS_HPP
+
+#ifndef SAFEPARAMETERS_HPP
+#error "This file should never be included directly! "                         \
+       "Instead include SafeParameters.hpp!"
+#endif
 
 /*! @brief Minimum radius (in AU; set by the configuration). */
 #define RMIN_IN_M (@rmin_in_m@)
@@ -72,10 +78,13 @@
 /*! @brief Courant factor for the time step criterion. */
 #define COURANT_FACTOR (@courant_factor@)
 
-/*! @brief Type of Riemann solver to use. */
+/*! @brief Type of Riemann solver to use (set by the configuration). */
 #define RIEMANNSOLVER_TYPE @riemannsolver_type@
 
-/*! @brief Dimensionality. */
+/*! @brief Dimensionality (set by the configuration). */
 #define DIMENSIONALITY @dimensionality@
+
+/*! @brief Hydro integration scheme order (set by the configuration). */
+#define HYDRO_ORDER @hydro_order@
 
 #endif // PARAMETERS_HPP

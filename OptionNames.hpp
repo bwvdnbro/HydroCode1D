@@ -1,13 +1,14 @@
 /*******************************************************************************
- * This file is part of HydroCodeSpherical1D
+ * This file is part of HydroCode1D
  * Copyright (C) 2017 Bert Vandenbroucke (bert.vandenbroucke@gmail.com)
+ *               2018 Bert Vandenbroucke (bert.vandenbroucke@gmail.com)
  *
- * HydroCodeSpherical1D is free software: you can redistribute it and/or modify
+ * HydroCode1D is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * HydroCodeSpherical1D is distributed in the hope that it will be useful,
+ * HydroCode1D is distributed in the hope that it will be useful,
  * but WITOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
@@ -69,5 +70,12 @@
 #define DIMENSIONALITY_2D 2
 /*! @brief 3D spherically symmetric solver. */
 #define DIMENSIONALITY_3D 3
+
+// Possible hydro integration scheme orders
+
+/*! @brief First order. */
+#define HYDRO_ORDER_1 1
+/*! @brief Second order. */
+#define HYDRO_ORDER_2 2
 
 #endif // OPTIONNAMES_HPP

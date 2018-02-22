@@ -1,19 +1,20 @@
 /*******************************************************************************
- * This file is part of HydroCodeSpherical1D
+ * This file is part of HydroCode1D
  * Copyright (C) 2017 Bert Vandenbroucke (bert.vandenbroucke@gmail.com)
+ *               2018 Bert Vandenbroucke (bert.vandenbroucke@gmail.com)
  *
- * HydroCodeSpherical1D is free software: you can redistribute it and/or modify
+ * HydroCode1D is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * HydroCodeSpherical1D is distributed in the hope that it will be useful,
+ * HydroCode1D is distributed in the hope that it will be useful,
  * but WITOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with HydroCodeSpherical1D. If not, see <http://www.gnu.org/licenses/>.
+ * along with HydroCode1D. If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
 /**
@@ -99,6 +100,16 @@
     (DIMENSIONALITY == DIMENSIONALITY_2D ||                                    \
      DIMENSIONALITY == DIMENSIONALITY_3D)
 #error "Periodic boundary conditions only work with DIMENSIONALITY_1D!"
+#endif
+
+// check hydro integration scheme order
+#ifndef HYDRO_ORDER
+#error "No hydro integration scheme order selected!"
+#else
+#if HYDRO_ORDER != HYDRO_ORDER_1 && HYDRO_ORDER != HYDRO_ORDER_2
+#pragma message(value_of_macro(HYDRO_ORDER))
+#error "Invalid hydro integration scheme order selected!"
+#endif
 #endif
 
 // include derived parameters
