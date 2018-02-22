@@ -24,7 +24,7 @@ then
   exit 1
 fi
 
-cmake -DCMAKE_BUILD_TYPE=Release -Drmin_in_m=0. -Drmax_in_m=1. -Dncell=1000 \
+cmake -DCMAKE_BUILD_TYPE=Release -Drmin_in_m=0. -Drmax_in_m=2. -Dncell=2000 \
       -Dgamma=5./3. -Dmaxtime_in_s=0.8 -Dnumber_of_snaps=10 \
       -Deos=EOS_IDEAL \
       -Dboundaries=BOUNDARIES_SPHERICAL -Dpotential=POTENTIAL_SELF_GRAVITY \

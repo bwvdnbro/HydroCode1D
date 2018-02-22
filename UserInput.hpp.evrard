@@ -40,9 +40,15 @@
 inline void get_initial_hydro_variables(const double x, double &rho, double &u,
                                         double &P) {
   // Evrard collapse test (see Springel (2010), Hopkins (2015))
-  rho = 1. / (2. * M_PI * x);
-  u = 0.;
-  P = 2. / 3. * rho * 0.05;
+  if(x < 1.){
+    rho = 1. / (2. * M_PI * x);
+    u = 0.;
+    P = 2. / 3. * rho * 0.05;
+  } else {
+    rho = 0.;
+    u = 0.;
+    P = 0.;
+  }
 }
 
 #if BOUNDARIES == BOUNDARIES_CUSTOM

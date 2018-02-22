@@ -57,9 +57,11 @@
     /* Now apply gravity to each cell. */                                      \
     _Pragma("omp parallel for") for (uint_fast32_t i = 1; i < ncell + 1;       \
                                      ++i) {                                    \
-      const double gravfac = 0.5 * cells[i]._dt * cells[i]._a;                 \
-      cells[i]._E += gravfac * cells[i]._p;                                    \
-      cells[i]._p += gravfac * cells[i]._m;                                    \
+      if (cells[i]._m > 0.) {                                                  \
+        const double gravfac = 0.5 * cells[i]._dt * cells[i]._a;               \
+        cells[i]._E += gravfac * cells[i]._p;                                  \
+        cells[i]._p += gravfac * cells[i]._m;                                  \
+      }                                                                        \
     }                                                                          \
   }
 #elif POTENTIAL == POTENTIAL_NONE
@@ -74,7 +76,9 @@
  */
 #if POTENTIAL != POTENTIAL_NONE
 #define add_gravitational_prediction(cell, half_dt)                            \
-  cell._u += half_dt * cell._a;
+  if (cell._rho > 0.) {                                                        \
+    cell._u += half_dt * cell._a;                                              \
+  }
 #else
 #define add_gravitational_prediction(cell, half_dt)
 #endif

@@ -51,7 +51,10 @@
 #if EOS == EOS_IDEAL
 #define update_pressure(cell)                                                  \
   cell._P = (GAMMA - 1.) *                                                     \
-            (cell._E / cell._V - 0.5 * cell._rho * cell._u * cell._u);
+            (cell._E / cell._V - 0.5 * cell._rho * cell._u * cell._u);         \
+  if (cell._P < 0.) {                                                          \
+    cell._P = 0.;                                                              \
+  }
 #elif EOS == EOS_ISOTHERMAL
 #define update_pressure(cell) cell._P = ISOTHERMAL_C_SQUARED * cell._rho;
 #endif

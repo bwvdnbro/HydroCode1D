@@ -264,11 +264,14 @@ int main(int argc, char **argv) {
                   0.5 * cells[i]._u * cells[i]._p;
 
     // time step criterion
-    const double cs =
-        std::sqrt(GAMMA * cells[i]._P / cells[i]._rho) + std::abs(cells[i]._u);
-    const double dt = courant_factor * cells[i]._V / cs;
-    const uint_fast64_t integer_dt = (dt / maxtime) * integer_maxtime;
-    min_integer_dt = std::min(min_integer_dt, integer_dt);
+    // only non-vacuum cells are considered for the time step
+    if (cells[i]._rho > 0.) {
+      const double cs = std::sqrt(GAMMA * cells[i]._P / cells[i]._rho) +
+                        std::abs(cells[i]._u);
+      const double dt = courant_factor * cells[i]._V / cs;
+      const uint_fast64_t integer_dt = (dt / maxtime) * integer_maxtime;
+      min_integer_dt = std::min(min_integer_dt, integer_dt);
+    }
   }
 
   // set cell time steps
@@ -320,15 +323,22 @@ int main(int argc, char **argv) {
 #pragma omp parallel for reduction(min : min_integer_dt)
     for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
       cells[i]._rho = cells[i]._m / cells[i]._V;
-      cells[i]._u = cells[i]._p / cells[i]._m;
+      if (cells[i]._m > 0.) {
+        cells[i]._u = cells[i]._p / cells[i]._m;
+      } else {
+        cells[i]._u = 0.;
+      }
       // the pressure update depends on the equation of state
       // this is handled in EOS.hpp
       update_pressure(cells[i]);
-      const double cs = std::sqrt(GAMMA * cells[i]._P / cells[i]._rho) +
-                        std::abs(cells[i]._u);
-      const double dt = courant_factor * cells[i]._V / cs;
-      const uint_fast64_t integer_dt = (dt / maxtime) * integer_maxtime;
-      min_integer_dt = std::min(min_integer_dt, integer_dt);
+      // only non-vacuum cells are considered for the time step
+      if (cells[i]._rho > 0.) {
+        const double cs = std::sqrt(GAMMA * cells[i]._P / cells[i]._rho) +
+                          std::abs(cells[i]._u);
+        const double dt = courant_factor * cells[i]._V / cs;
+        const uint_fast64_t integer_dt = (dt / maxtime) * integer_maxtime;
+        min_integer_dt = std::min(min_integer_dt, integer_dt);
+      }
     }
 
     // round min_integer_dt to closest smaller power of 2
