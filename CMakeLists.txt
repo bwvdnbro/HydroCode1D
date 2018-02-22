@@ -18,7 +18,7 @@
 
 cmake_minimum_required(VERSION 2.8)
 
-project(HydroCodeSpherical1D)
+project(HydroCode1D)
 
 set(SOURCES
     main_spherical.cpp
@@ -58,8 +58,20 @@ check_configuration_option(dimensionality "DIMENSIONALITY_3D")
 configure_file(${PROJECT_SOURCE_DIR}/Parameters.hpp.in
                ${PROJECT_BINARY_DIR}/Parameters.hpp @only)
 
-configure_file(${PROJECT_SOURCE_DIR}/UserInput.hpp.in
-               ${PROJECT_BINARY_DIR}/UserInput.hpp COPYONLY)
+if(NOT DEFINED predefined_test)
+  message(STATUS "No predefined test chosen, copying empty UserInput.hpp.")
+  configure_file(${PROJECT_SOURCE_DIR}/UserInput.hpp.in
+                 ${PROJECT_BINARY_DIR}/UserInput.hpp COPYONLY)
+else(NOT DEFINED predefined_test)
+  set(TEST_FILENAME "${PROJECT_SOURCE_DIR}/UserInput.hpp.${predefined_test}")
+  if(EXISTS ${TEST_FILENAME})
+    message(STATUS "Copying predefined test ${predefined_test}.")
+    configure_file(${TEST_FILENAME}
+                   ${PROJECT_BINARY_DIR}/UserInput.hpp COPYONLY)
+  else(EXISTS ${TEST_FILENAME})
+    message(ERROR "Predefined test ${predefined_test} not found!")
+  endif(EXISTS ${TEST_FILENAME})
+endif(NOT DEFINED predefined_test)
 
 include_directories(${PROJECT_BINARY_DIR})
 
@@ -74,4 +86,4 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math -ftree-vectorize")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Wshadow")
 
-add_executable(HydroCodeSpherical1D ${SOURCES})
+add_executable(HydroCode1D ${SOURCES})

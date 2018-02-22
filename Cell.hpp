@@ -78,11 +78,6 @@ public:
   /*! @brief Gravitational acceleration (in internal units of L T^-2). */
   double _a;
 
-  // ionisation quantities
-
-  /*! @brief Neutral fraction. */
-  double _nfac;
-
   // time step
 
   /*! @brief Integer time step (in integer time units). */
@@ -90,29 +85,6 @@ public:
 
   /*! @brief Physical time step (in internal units of T). */
   double _dt;
-
-  // ADAPTIVE OUTPUT
-
-  /*! @brief Index of the cell (for identification in the log file). */
-  uint_least16_t _index;
-
-  /*! @brief Last log file entry offset. */
-  uint_least64_t _last_entry;
-
-  /*! @brief Last density value that was written to the log file (in internal
-   *  units of M L^-3). */
-  double _last_rho;
-
-  /*! @brief Last velocity value that was written to the log file (in internal
-   *  units of L T^-1). */
-  double _last_u;
-
-  /*! @brief Last pressure value that was written to the log file (in internal
-   *  units of M L^-1 T^-2). */
-  double _last_P;
-
-  /*! @brief Last neutral fraction value that was written to the log file. */
-  double _last_nfac;
 };
 
 #endif // CELL_HPP

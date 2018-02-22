@@ -1,0 +1,17 @@
+inline void get_initial_hydro_variables(const double x, double &rho, double &u,
+                                        double &P) {
+  if (x < 0.5) {
+    rho = 1.;
+    P = 1.;
+  } else {
+    rho = 0.125;
+    P = 0.1;
+  }
+  u = 0.;
+}
+
+#if BOUNDARIES == BOUNDARIES_CUSTOM
+#error                                                                         \
+    "The Sod shock should be run with periodic, open or reflective boundary "  \
+    "conditions!"
+#endif

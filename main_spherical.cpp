@@ -176,9 +176,6 @@ int main(int argc, char **argv) {
     // initialize the time step to a sensible value: the requested snapshot time
     // interval
     cells[i]._dt = (MAXTIME / NUMBER_OF_SNAPS);
-    // only actual cells have an index in the range [0, ncell[. The two ghost
-    // cells are excluded by the bit of conditional magic below.
-    cells[i]._index = (i != 0 && i != ncell + 2) ? (i - 1) : ncell + 2;
   }
 
   // set up the initial condition
@@ -213,13 +210,6 @@ int main(int argc, char **argv) {
     const double dt = courant_factor * cells[i]._V / cs;
     const uint_fast64_t integer_dt = (dt / maxtime) * integer_maxtime;
     min_integer_dt = std::min(min_integer_dt, integer_dt);
-
-    // initialize variables used for the log file
-    cells[i]._last_rho = cells[i]._rho;
-    cells[i]._last_u = cells[i]._u;
-    cells[i]._last_P = cells[i]._P;
-    cells[i]._last_nfac = cells[i]._nfac;
-    cells[i]._last_entry = 0;
   }
 
   // set cell time steps
