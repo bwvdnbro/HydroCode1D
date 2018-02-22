@@ -98,7 +98,7 @@ void write_snapshot(uint_fast64_t istep, double time, const Cell *cells,
   std::cout << "Writing snapshot " << filename.str() << std::endl;
   std::ofstream ofile(filename.str().c_str());
   ofile << "# time: " << time << " s\n";
-  ofile << "# x (m)\trho (kg m^-3)\tu (m s^-1)\tP (kg m^-1 s^-2)\n";
+  ofile << "#\n";
   ofile << "# Output by HydroCode1D on " << get_timestamp() << "\n";
   ofile << "# https://github.com/bwvdnbro/HydroCode1D\n";
   ofile << "# Git version: " << git_info << "\n";
@@ -107,6 +107,8 @@ void write_snapshot(uint_fast64_t istep, double time, const Cell *cells,
     ofile << "#  " << configuration_keys[i] << ": " << configuration_values[i]
           << "\n";
   }
+  ofile << "#\n";
+  ofile << "# x (m)\trho (kg m^-3)\tu (m s^-1)\tP (kg m^-1 s^-2)\n";
   for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
     ofile << cells[i]._midpoint << "\t" << cells[i]._rho << "\t" << cells[i]._u
           << "\t" << cells[i]._P << "\n";
