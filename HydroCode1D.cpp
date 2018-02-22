@@ -294,6 +294,8 @@ int main(int argc, char **argv) {
 #endif
 
   // initialize some variables used to guesstimate the remaing run time
+  double last_stat_time = total_time.interval();
+  const double stat_interval = 60.; // stat output every minute
   Timer step_time;
   double time_since_last = 0.;
   double time_since_start = 0.;
@@ -358,6 +360,18 @@ int main(int argc, char **argv) {
 
     // check if we need to output a snapshot
     if (current_integer_time >= isnap * snaptime) {
+      // write the actual snapshot
+      write_snapshot(isnap, current_integer_time * time_conversion_factor,
+                     cells, ncell);
+      ++isnap;
+    }
+
+    // check if we need to output run time statistics
+    // (this is the only useful output the user gets to see before the
+    //  simulation finishes)
+    const double total_time_interval = total_time.interval();
+    if (total_time_interval - last_stat_time > stat_interval) {
+      last_stat_time = total_time_interval;
       // yes: display some statistics and a guesstimate of the remaining run
       // time
       const double pct = current_integer_time * 100. / integer_maxtime;
@@ -376,10 +390,6 @@ int main(int argc, char **argv) {
       // reset guesstimate counters
       time_since_last = 0.;
       steps_since_last = 0;
-      // write the actual snapshot
-      write_snapshot(isnap, current_integer_time * time_conversion_factor,
-                     cells, ncell);
-      ++isnap;
     }
 
     // apply boundary conditions
