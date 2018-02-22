@@ -178,6 +178,23 @@ int main(int argc, char **argv) {
     cells[i]._midpoint = RMIN + (i - 0.5) * CELLSIZE;
     cells[i]._uplim = RMIN + i * CELLSIZE;
     cells[i]._V = CELLSIZE;
+#if DIMENSIONALITY == DIMENSIONALITY_1D
+    cells[i]._V_real = cells[i]._V;
+    cells[i]._V_real_half = 0.5 * cells[i]._V;
+#elif DIMENSIONALITY == DIMENSIONALITY_2D
+    cells[i]._V_real = M_PI * (cells[i]._uplim * cells[i]._uplim -
+                               cells[i]._lowlim * cells[i]._lowlim);
+    cells[i]._V_real_half = M_PI * (cells[i]._midpoint * cells[i]._midpoint -
+                                    cells[i]._lowlim * cells[i]._lowlim);
+#elif DIMENSIONALITY == DIMENSIONALITY_3D
+    cells[i]._V_real = 4. * M_PI / 3. *
+                       (cells[i]._uplim * cells[i]._uplim * cells[i]._uplim -
+                        cells[i]._lowlim * cells[i]._lowlim * cells[i]._lowlim);
+    cells[i]._V_real_half =
+        4. * M_PI / 3. *
+        (cells[i]._midpoint * cells[i]._midpoint * cells[i]._midpoint -
+         cells[i]._lowlim * cells[i]._lowlim * cells[i]._lowlim);
+#endif
     cells[i]._integer_dt = 0;
     // initialize the time step to a sensible value: the requested snapshot time
     // interval

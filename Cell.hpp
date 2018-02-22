@@ -73,6 +73,12 @@ public:
   /*! @brief Radial coordinate of the upper boundary of the shell (in internal
    *  units of L). */
   double _uplim;
+  /*! @brief Real volume of the cell: differs from _V for 2D and 3D spherically
+   *  symmetric simulations (in internal units of L^d). */
+  double _V_real;
+  /*! @brief Volume of the part of the cell enclosed in _lowlim and _midpoint
+   *  (in internal units of L^d). */
+  double _V_real_half;
 
   // gravitational quantities
 

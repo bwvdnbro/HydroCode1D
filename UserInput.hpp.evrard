@@ -1,0 +1,50 @@
+/*******************************************************************************
+ * This file is part of HydroCode1D
+ * Copyright (C) 2018 Bert Vandenbroucke (bert.vandenbroucke@gmail.com)
+ *
+ * HydroCode1D is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * HydroCode1D is distributed in the hope that it will be useful,
+ * but WITOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with HydroCode1D. If not, see <http://www.gnu.org/licenses/>.
+ ******************************************************************************/
+
+#include <cmath>
+
+/**
+ * @file UserInput.hpp
+ *
+ * @brief User specific code.
+ *
+ * Predefined versions of this file exist and can be selected during
+ * configuration by setting the -Dpredefined_test variable.
+ *
+ * @author Bert Vandenbroucke (bv7@st-andrews.ac.uk)
+ */
+
+/**
+ * @brief Get the initial condition for the given spatial coordinate.
+ *
+ * @param x Spatial coordinate (in m).
+ * @param rho Density variable to set (in kg m^-3).
+ * @param u Fluid velocity variable to set (in m s^-1).
+ * @param P Pressure variable to set (in kg m^-2 s^-2).
+ */
+inline void get_initial_hydro_variables(const double x, double &rho, double &u,
+                                        double &P) {
+  // Evrard collapse test (see Springel (2010), Hopkins (2015))
+  rho = 1. / (2. * M_PI * x);
+  u = 0.;
+  P = 2. / 3. * rho * 0.05;
+}
+
+#if BOUNDARIES == BOUNDARIES_CUSTOM
+#error "The Evrard test requires BOUNDARIES_SPHERICAL!"
+#endif

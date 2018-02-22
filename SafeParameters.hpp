@@ -47,7 +47,8 @@
 #error "No boundary conditions selected!"
 #else
 #if BOUNDARIES != BOUNDARIES_OPEN && BOUNDARIES != BOUNDARIES_REFLECTIVE &&    \
-    BOUNDARIES != BOUNDARIES_PERIODIC && BOUNDARIES != BOUNDARIES_CUSTOM
+    BOUNDARIES != BOUNDARIES_PERIODIC && BOUNDARIES != BOUNDARIES_SPHERICAL && \
+    BOUNDARIES != BOUNDARIES_CUSTOM
 #pragma message(value_of_macro(BOUNDARIES))
 #error "Invalid boundary conditions selected!"
 #endif
@@ -67,7 +68,8 @@
 #ifndef POTENTIAL
 #error "No external potential selected!"
 #else
-#if POTENTIAL != POTENTIAL_NONE && POTENTIAL != POTENTIAL_POINT_MASS
+#if POTENTIAL != POTENTIAL_NONE && POTENTIAL != POTENTIAL_POINT_MASS &&        \
+    POTENTIAL != POTENTIAL_SELF_GRAVITY
 #pragma message(value_of_macro(POTENTIAL))
 #error "Invalid potential selected!"
 #endif
@@ -100,6 +102,13 @@
     (DIMENSIONALITY == DIMENSIONALITY_2D ||                                    \
      DIMENSIONALITY == DIMENSIONALITY_3D)
 #error "Periodic boundary conditions only work with DIMENSIONALITY_1D!"
+#endif
+
+// check that we are not using self-gravity in 1D or 2D
+#if POTENTIAL == POTENTIAL_SELF_GRAVITY &&                                     \
+    (DIMENSIONALITY == DIMENSIONALITY_1D ||                                    \
+     DIMENSIONALITY == DIMENSIONALITY_2D)
+#error "Self-gravity only works with DIMENSIONALITY_3D!"
 #endif
 
 // check hydro integration scheme order

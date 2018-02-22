@@ -42,6 +42,26 @@
     const double m = cells[i]._V * cells[i]._rho;                              \
     cells[i]._p += 0.5 * cells[i]._dt * cells[i]._a * m;                       \
   }
+#elif POTENTIAL == POTENTIAL_SELF_GRAVITY
+#define do_gravity(cells, ncell)                                               \
+  {                                                                            \
+    double Mtot = 0.;                                                          \
+    /* Get the acceleration for each cell (needs to be evaluated in a fixed    \
+     * order, serially). */                                                    \
+    for (uint_fast32_t i = 1; i < ncell + 1; ++i) {                            \
+      const double mcell = Mtot + cells[i]._rho * cells[i]._V_real_half;       \
+      const double r = cells[i]._midpoint;                                     \
+      cells[i]._a = -G_INTERNAL * mcell / (r * r);                             \
+      Mtot += cells[i]._rho * cells[i]._V_real;                                \
+    }                                                                          \
+    /* Now apply gravity to each cell. */                                      \
+    _Pragma("omp parallel for") for (uint_fast32_t i = 1; i < ncell + 1;       \
+                                     ++i) {                                    \
+      const double gravfac = 0.5 * cells[i]._dt * cells[i]._a;                 \
+      cells[i]._E += gravfac * cells[i]._p;                                    \
+      cells[i]._p += gravfac * cells[i]._m;                                    \
+    }                                                                          \
+  }
 #elif POTENTIAL == POTENTIAL_NONE
 #define do_gravity(cells, ncell)
 #endif

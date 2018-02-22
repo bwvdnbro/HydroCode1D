@@ -37,9 +37,12 @@
 /*! @brief Periodic boundaries: outgoing flows enter the box through the other
  *  side (note that this only works for 1D). */
 #define BOUNDARIES_PERIODIC 3
+/*! @brief Spherical open boundaries: reflective left boundary and open right
+ *  boundary. */
+#define BOUNDARIES_SPHERICAL 4
 /*! @brief Custom boundaries: boundary conditions are provided by the user in
  *  (UserInput.hpp). */
-#define BOUNDARIES_CUSTOM 4
+#define BOUNDARIES_CUSTOM 5
 
 // Possible types of equation of state.
 
@@ -54,6 +57,8 @@
 #define POTENTIAL_NONE 1
 /*! @brief Point mass external potential. */
 #define POTENTIAL_POINT_MASS 2
+/*! @brief Spherical gravity. */
+#define POTENTIAL_SELF_GRAVITY 3
 
 // Possible types of Riemann solver
 
