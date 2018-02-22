@@ -1,0 +1,32 @@
+/*******************************************************************************
+ * This file is part of HydroCode1D
+ * Copyright (C) 2018 Bert Vandenbroucke (bert.vandenbroucke@gmail.com)
+ *
+ * HydroCode1D is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * HydroCode1D is distributed in the hope that it will be useful,
+ * but WITOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with HydroCode1D. If not, see <http://www.gnu.org/licenses/>.
+ ******************************************************************************/
+
+/**
+ * @file Parameters.cpp
+ *
+ * @brief Configured values of simulation parameters.
+ *
+ * @author Bert Vandenbroucke (bv7@st-andrews.ac.uk)
+ */
+
+#include "@PROJECT_SOURCE_DIR@/SafeParameters.hpp"
+
+const std::string configuration_keys[CONFIGURATION_NUMBER] = {
+    @CONFIGURATION_KEYS@};
+const std::string configuration_values[CONFIGURATION_NUMBER] = {
+    @CONFIGURATION_VALUES@};

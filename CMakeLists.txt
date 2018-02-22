@@ -23,6 +23,8 @@ project(HydroCode1D)
 
 set(SOURCES
     HydroCode1D.cpp
+    ${PROJECT_BINARY_DIR}/GitInfo.cpp
+    ${PROJECT_BINARY_DIR}/Parameters.cpp
 
     Boundaries.hpp
     Cell.hpp
@@ -42,6 +44,8 @@ set(SOURCES
     UserInput.hpp.sod
 )
 
+set(CONFIGURATION_NUMBER "0")
+
 # macro that checks if a configuration value was set on the command line
 # if not, the default value is set and a warning is printed
 # we also print the actual value that is used
@@ -51,6 +55,9 @@ macro(check_configuration_option option_name option_default_value)
     set(${option_name} ${option_default_value})
   endif(NOT DEFINED ${option_name})
   message(STATUS "${option_name}: ${${option_name}}")
+  set(CONFIGURATION_NUMBER "${CONFIGURATION_NUMBER}+1")
+  set(CONFIGURATION_KEYS "${CONFIGURATION_KEYS}\"${option_name}\",")
+  set(CONFIGURATION_VALUES "${CONFIGURATION_VALUES}\"${${option_name}}\",")
 endmacro(check_configuration_option)
 
 # Configurable parameters
@@ -74,6 +81,8 @@ check_configuration_option(hydro_order "HYDRO_ORDER_2")
 
 configure_file(${PROJECT_SOURCE_DIR}/Parameters.hpp.in
                ${PROJECT_BINARY_DIR}/Parameters.hpp @ONLY)
+configure_file(${PROJECT_SOURCE_DIR}/Parameters.cpp.in
+               ${PROJECT_BINARY_DIR}/Parameters.cpp @ONLY)
 
 if(NOT DEFINED predefined_test)
   message(STATUS "No predefined test chosen, copying empty UserInput.hpp.")
@@ -98,6 +107,26 @@ if(OPENMP_FOUND)
 else(OPENMP_FOUND)
   message(ERROR "OpenMP not found!")
 endif(OPENMP_FOUND)
+
+find_package(Git)
+
+# Add the command and target that creates the CompilerInfo.cpp file
+# Note that we need to add the 'dummy_file_that_is_not_created' to the outputs
+# to force rerunnning this command every time the code is compiled
+add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/GitInfo.cpp
+                          dummy_file_that_is_not_created
+                   COMMENT "Generating GitInfo.cpp"
+                   COMMAND ${CMAKE_COMMAND}
+                           -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
+                           -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}
+                           -DPROJECT_BINARY_DIR=${PROJECT_BINARY_DIR}
+                           -P ${PROJECT_SOURCE_DIR}/write_git_info.cmake
+                   DEPENDS ${PROJECT_SOURCE_DIR}/.git/HEAD
+                           ${PROJECT_SOURCE_DIR}/GitInfo.cpp.in
+                   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+add_custom_target(GitInfo
+                  DEPENDS ${PROJECT_BINARY_DIR}/GitInfo.cpp)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math -ftree-vectorize")

@@ -33,6 +33,8 @@
        "Instead include SafeParameters.hpp!"
 #endif
 
+#include <string>
+
 /*! @brief Minimum radius (in AU; set by the configuration). */
 #define RMIN_IN_M (@rmin_in_m@)
 
@@ -86,5 +88,16 @@
 
 /*! @brief Hydro integration scheme order (set by the configuration). */
 #define HYDRO_ORDER @hydro_order@
+
+/*! @brief Number of configuration options. */
+#define CONFIGURATION_NUMBER (@CONFIGURATION_NUMBER@)
+
+/*! @brief Configuration keys (for output). */
+extern const std::string configuration_keys[CONFIGURATION_NUMBER];
+/*! @brief Configuration values (for output). */
+extern const std::string configuration_values[CONFIGURATION_NUMBER];
+
+/*! @brief Git describe string (for output). */
+extern const char git_info[];
 
 #endif // PARAMETERS_HPP
