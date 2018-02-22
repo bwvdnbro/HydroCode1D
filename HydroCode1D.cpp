@@ -155,6 +155,11 @@ int main(int argc, char **argv) {
     }
   }
 
+#if EOS == EOS_ISOTHERMAL
+  std::cout << "Isothermal sound speed: " << std::sqrt(ISOTHERMAL_C_SQUARED)
+            << " m s^-1." << std::endl;
+#endif
+
   // initialize the time line used for time stepping
   // we use a classical power of 2 integer time line as e.g. Gadget2
   const double maxtime = MAXTIME;

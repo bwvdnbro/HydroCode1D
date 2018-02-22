@@ -30,8 +30,6 @@ set(SOURCES
     EOS.hpp
     HLLCRiemannSolver.hpp
     IC.hpp
-    LambertW.hpp
-    LogFile.hpp
     OptionNames.hpp
     PhysicalConstants.hpp
     Potential.hpp
@@ -75,18 +73,18 @@ check_configuration_option(dimensionality "DIMENSIONALITY_1D")
 check_configuration_option(hydro_order "HYDRO_ORDER_2")
 
 configure_file(${PROJECT_SOURCE_DIR}/Parameters.hpp.in
-               ${PROJECT_BINARY_DIR}/Parameters.hpp @only)
+               ${PROJECT_BINARY_DIR}/Parameters.hpp @ONLY)
 
 if(NOT DEFINED predefined_test)
   message(STATUS "No predefined test chosen, copying empty UserInput.hpp.")
   configure_file(${PROJECT_SOURCE_DIR}/UserInput.hpp.in
-                 ${PROJECT_BINARY_DIR}/UserInput.hpp COPYONLY)
+                 ${PROJECT_BINARY_DIR}/UserInput.hpp @ONLY)
 else(NOT DEFINED predefined_test)
   set(TEST_FILENAME "${PROJECT_SOURCE_DIR}/UserInput.hpp.${predefined_test}")
   if(EXISTS ${TEST_FILENAME})
     message(STATUS "Copying predefined test ${predefined_test}.")
     configure_file(${TEST_FILENAME}
-                   ${PROJECT_BINARY_DIR}/UserInput.hpp COPYONLY)
+                   ${PROJECT_BINARY_DIR}/UserInput.hpp @ONLY)
   else(EXISTS ${TEST_FILENAME})
     message(ERROR "Predefined test ${predefined_test} not found!")
   endif(EXISTS ${TEST_FILENAME})

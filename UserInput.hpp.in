@@ -56,6 +56,7 @@ inline void get_initial_hydro_variables(const double x, double &rho, double &u,
  * (in m s^-1).
  * @param P_left Pressure for the cell next to the left boundary
  * (in kg m^-2 s^-2).
+ * @param x_ghost Position of the ghost cell (in m).
  * @param dt_ghost Ghost cell time step to set (in s).
  * @param rho_ghost Ghost cell density to set (in kg m^-3).
  * @param u_ghost Ghost cell fluid velocity to set (in m s^-1).
@@ -63,8 +64,9 @@ inline void get_initial_hydro_variables(const double x, double &rho, double &u,
  */
 inline void get_left_boundary(const double dt_left, const double rho_left,
                               const double u_left, const double P_left,
-                              double &dt_ghost, double &rho_ghost,
-                              double &u_ghost, double &P_ghost) {
+                              const double x_ghost, double &dt_ghost,
+                              double &rho_ghost, double &u_ghost,
+                              double &P_ghost) {
   // This function should set the values of dt_ghost, rho_ghost, u_ghost and
   // P_ghost to correct values for the left boundary of the simulation box.
   // It can use the values in the cell next to the boundary.
@@ -88,6 +90,7 @@ inline void get_left_boundary(const double dt_left, const double rho_left,
  * (in m s^-1).
  * @param P_right Pressure for the cell next to the right boundary
  * (in kg m^-2 s^-2).
+ * @param x_ghost Position of the ghost cell (in m).
  * @param dt_ghost Ghost cell time step to set (in s).
  * @param rho_ghost Ghost cell density to set (in kg m^-3).
  * @param u_ghost Ghost cell fluid velocity to set (in m s^-1).
@@ -95,8 +98,9 @@ inline void get_left_boundary(const double dt_left, const double rho_left,
  */
 inline void get_right_boundary(const double dt_right, const double rho_right,
                                const double u_right, const double P_right,
-                               double &dt_ghost, double &rho_ghost,
-                               double &u_ghost, double &P_ghost) {
+                               const double x_ghost, double &dt_ghost,
+                               double &rho_ghost, double &u_ghost,
+                               double &P_ghost) {
   // This function should set the values of dt_ghost, rho_ghost, u_ghost and
   // P_ghost to correct values for the right boundary of the simulation box.
   // It can use the values in the cell next to the boundary.
