@@ -128,10 +128,14 @@ static inline uint_fast64_t round_power2_down(uint_fast64_t x) {
 /**
  * @brief Main simulation program.
  *
- * Usage: ./HydroCode1D
+ * Usage: ./HydroCode1D [NUMBER OF THREADS]
  *
- * This program takes no command line arguments; all parameters need to be
- * configured at compilation time.
+ * This program takes a single (optional) command line argument: the number of
+ * shared memory parallel threads to use. If not set, the number of available
+ * threads in the environment variable OMP_NUM_THREADS is used. Note that for
+ * low cell numbers, using a lot of threads will slow the computation down
+ * rather than speed it up; it is advisable to try different thread numbers to
+ * find the optimal value for a given problem, resolution and hardware.
  *
  * @param argc Number of command line arguments.
  * @param argv Command line arguments.
@@ -145,13 +149,35 @@ int main(int argc, char **argv) {
 
   const unsigned int ncell = NCELL;
 
-// figure out how many threads we are using and tell the user about this
+  // figure out how many threads we are using and tell the user about this
+  int num_thread;
 #pragma omp parallel
   {
 #pragma omp single
     {
-      int num_thread = omp_get_num_threads();
-      std::cout << "Running on " << num_thread << " thread(s)." << std::endl;
+      num_thread = omp_get_num_threads();
+      std::cout << num_thread << " thread(s) available." << std::endl;
+    }
+  }
+
+  if (argc > 1) {
+    const int num_thread_request = atoi(argv[1]);
+    if (num_thread_request <= num_thread) {
+      num_thread = num_thread_request;
+    } else {
+      std::cout << "More threads requested than available.\nWill fall back to "
+                   "number of available threads."
+                << std::endl;
+    }
+  }
+  omp_set_num_threads(num_thread);
+#pragma omp parallel
+  {
+#pragma omp single
+    {
+      num_thread = omp_get_num_threads();
+      std::cout << "Will run using " << num_thread << " thread(s)."
+                << std::endl;
     }
   }
 
