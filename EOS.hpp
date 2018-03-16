@@ -50,6 +50,7 @@
  */
 #if EOS == EOS_IDEAL
 #define update_pressure(cell)                                                  \
+  assert_condition(cell._E >= 0.);                                             \
   cell._P = (GAMMA - 1.) *                                                     \
             (cell._E / cell._V - 0.5 * cell._rho * cell._u * cell._u);         \
   if (cell._P < 0.) {                                                          \

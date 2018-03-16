@@ -48,6 +48,18 @@
 #include <sstream>
 
 /**
+ * @brief Custom assertion macro.
+ *
+ * @param c Condition to assert.
+ */
+#define assert_condition(c)                                                    \
+  if (!(c)) {                                                                  \
+    std::cerr << __FILE__ << ":" << __FUNCTION__ << "():" << __LINE__          \
+              << ": Assertion failed: " << #c << "!" << std::endl;             \
+    exit(1);                                                                   \
+  }
+
+/**
  * @brief Get the current time as a string.
  *
  * @return Current system time as a string with format YYYY:MM:DD:HH:MM:SS.
@@ -266,11 +278,17 @@ int main(int argc, char **argv) {
     // apply the equation of state to get the initial pressure (if necessary)
     initial_pressure(cells[i]);
 
+    assert_condition(cells[i]._rho >= 0.);
+    assert_condition(cells[i]._P >= 0.);
+
     // use the cell volume to convert primitive into conserved variables
     cells[i]._m = cells[i]._rho * cells[i]._V;
     cells[i]._p = cells[i]._m * cells[i]._u;
     cells[i]._E = cells[i]._P * cells[i]._V / (GAMMA - 1.) +
                   0.5 * cells[i]._u * cells[i]._p;
+
+    assert_condition(cells[i]._m >= 0.);
+    assert_condition(cells[i]._E >= 0.);
 
     // time step criterion
     // only non-vacuum cells are considered for the time step
@@ -340,6 +358,9 @@ int main(int argc, char **argv) {
 #pragma omp parallel for reduction(min : min_integer_dt)                       \
     reduction(+ : Ekin_tot, Epot_tot, Etherm_tot, Etot_tot)
     for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
+
+      assert_condition(cells[i]._m >= 0.);
+
       cells[i]._rho = cells[i]._m / cells[i]._V;
       if (cells[i]._m > 0.) {
         cells[i]._u = cells[i]._p / cells[i]._m;
@@ -363,7 +384,7 @@ int main(int argc, char **argv) {
       // first: gather some variables
       const double m = cells[i]._rho * cells[i]._V_real;
 
-      if (m > 0) {
+      if (m > 0.) {
         const double v2 = cells[i]._u * cells[i]._u;
         const double u = cells[i]._P / ((GAMMA - 1.) * cells[i]._rho);
         const double phi = cells[i]._pot;
@@ -490,6 +511,10 @@ int main(int argc, char **argv) {
                                             (Pmin - cells[i]._P) / Pextmin))
               : 1.;
       cells[i]._grad_P = alpha_P * gradP;
+
+      assert_condition(cells[i]._grad_rho == cells[i]._grad_rho);
+      assert_condition(cells[i]._grad_u == cells[i]._grad_u);
+      assert_condition(cells[i]._grad_P == cells[i]._grad_P);
     }
 
     // apply boundary conditions for the gradients
@@ -552,6 +577,18 @@ int main(int argc, char **argv) {
         const double uR = cells[i]._u;
         const double PR = cells[i]._P;
 
+        assert_condition(rhoL == rhoL);
+        assert_condition(rhoL >= 0.);
+        assert_condition(uL == uL);
+        assert_condition(PL == PL);
+        assert_condition(PL >= 0.);
+
+        assert_condition(rhoR == rhoR);
+        assert_condition(rhoR >= 0.);
+        assert_condition(uR == uR);
+        assert_condition(PR == PR);
+        assert_condition(PR >= 0.);
+
         // do the second order spatial reconstruction
         const double dmin = 0.5 * (cells[i]._midpoint - cells[i - 1]._midpoint);
         const double dplu = -dmin;
@@ -594,6 +631,18 @@ int main(int argc, char **argv) {
         const double rhoR = cells[i + 1]._rho;
         const double uR = cells[i + 1]._u;
         const double PR = cells[i + 1]._P;
+
+        assert_condition(rhoL == rhoL);
+        assert_condition(rhoL >= 0.);
+        assert_condition(uL == uL);
+        assert_condition(PL == PL);
+        assert_condition(PL >= 0.);
+
+        assert_condition(rhoR == rhoR);
+        assert_condition(rhoR >= 0.);
+        assert_condition(uR == uR);
+        assert_condition(PR == PR);
+        assert_condition(PR >= 0.);
 
         // do the second order spatial reconstruction
         const double dmin = 0.5 * (cells[i + 1]._midpoint - cells[i]._midpoint);
