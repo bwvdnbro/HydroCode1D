@@ -81,6 +81,23 @@ static std::string get_timestamp() {
 }
 
 /**
+ * @brief Add code information to an open output file.
+ *
+ * @param ofile Output file to add to.
+ */
+void add_code_block_to_file(std::ofstream &ofile) {
+  ofile << "# Output by HydroCode1D on " << get_timestamp() << "\n";
+  ofile << "# https://github.com/bwvdnbro/HydroCode1D\n";
+  ofile << "# Git version: " << git_info << "\n";
+  ofile << "# Configuration:\n";
+  for (uint_fast32_t i = 0; i < CONFIGURATION_NUMBER; ++i) {
+    ofile << "#  " << configuration_keys[i] << ": " << configuration_values[i]
+          << "\n";
+  }
+  ofile << "#\n";
+}
+
+/**
  * @brief Write a snapshot with the given index.
  *
  * @param istep Index of the snapshot file.
@@ -99,15 +116,7 @@ void write_snapshot(uint_fast64_t istep, double time, const Cell *cells,
   std::ofstream ofile(filename.str().c_str());
   ofile << "# time: " << time << " s\n";
   ofile << "#\n";
-  ofile << "# Output by HydroCode1D on " << get_timestamp() << "\n";
-  ofile << "# https://github.com/bwvdnbro/HydroCode1D\n";
-  ofile << "# Git version: " << git_info << "\n";
-  ofile << "# Configuration:\n";
-  for (uint_fast32_t i = 0; i < CONFIGURATION_NUMBER; ++i) {
-    ofile << "#  " << configuration_keys[i] << ": " << configuration_values[i]
-          << "\n";
-  }
-  ofile << "#\n";
+  add_code_block_to_file(ofile);
   ofile << "# x (m)\trho (kg m^-3)\tu (m s^-1)\tP (kg m^-1 s^-2)\n";
   for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
     ofile << cells[i]._midpoint << "\t" << cells[i]._rho << "\t" << cells[i]._u
@@ -294,7 +303,9 @@ int main(int argc, char **argv) {
 #endif
 
   std::ofstream efile("energy.log");
-  efile << "# t\tEkin\tEpot\tEtherm\tEtot\n";
+  add_code_block_to_file(efile);
+  efile << "# t (s)\tEkin (kg m^2 s^-2)\tEpot (kg m^2 s^-2)\tEtherm (kg m^2 "
+           "s^-2)\tEtot (kg m^2 s^-2)\n";
 
   // initialize some variables used to guesstimate the remaing run time
   double last_stat_time = total_time.interval();
