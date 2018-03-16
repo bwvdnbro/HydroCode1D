@@ -293,6 +293,9 @@ int main(int argc, char **argv) {
   RiemannSolver solver(GAMMA);
 #endif
 
+  std::ofstream efile("energy.log");
+  efile << "# t\tEkin\tEpot\tEtherm\tEtot\n";
+
   // initialize some variables used to guesstimate the remaing run time
   double last_stat_time = total_time.interval();
   const double stat_interval = 60.; // stat output every minute
@@ -322,7 +325,9 @@ int main(int argc, char **argv) {
     // variables and the current cell volume
     // also compute the new time step
     min_integer_dt = snaptime;
-#pragma omp parallel for reduction(min : min_integer_dt)
+    double Ekin_tot = 0., Epot_tot = 0., Etherm_tot = 0., Etot_tot = 0.;
+#pragma omp parallel for reduction(min : min_integer_dt)                       \
+    reduction(+ : Ekin_tot, Epot_tot, Etherm_tot, Etot_tot)
     for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
       cells[i]._rho = cells[i]._m / cells[i]._V;
       if (cells[i]._m > 0.) {
@@ -341,7 +346,35 @@ int main(int argc, char **argv) {
         const uint_fast64_t integer_dt = (dt / maxtime) * integer_maxtime;
         min_integer_dt = std::min(min_integer_dt, integer_dt);
       }
+
+      // energy statistics
+
+      // first: gather some variables
+      const double m = cells[i]._rho * cells[i]._V_real;
+
+      if (m > 0) {
+        const double v2 = cells[i]._u * cells[i]._u;
+        const double u = cells[i]._P / ((GAMMA - 1.) * cells[i]._rho);
+        const double phi = cells[i]._pot;
+
+        // now compute the energies
+        const double Ekin = 0.5 * m * v2;
+        const double Epot = m * phi;
+        const double Etherm = m * u;
+        const double Etot = Ekin + Epot + Etherm;
+
+        // add to the totals
+        Ekin_tot += Ekin;
+        Epot_tot += Epot;
+        Etherm_tot += Etherm;
+        Etot_tot += Etot;
+      }
     }
+
+    // now output energy statistics
+    const double t = current_integer_time * maxtime / integer_maxtime;
+    efile << t << "\t" << Ekin_tot << "\t" << Epot_tot << "\t" << Etherm_tot
+          << "\t" << Etot_tot << "\n";
 
     // round min_integer_dt to closest smaller power of 2
     global_integer_dt = round_power2_down(min_integer_dt);

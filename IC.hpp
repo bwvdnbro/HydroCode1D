@@ -40,6 +40,7 @@
     get_initial_hydro_variables(cells[i]._midpoint, cells[i]._rho,             \
                                 cells[i]._u, cells[i]._P);                     \
     cells[i]._a = 0.;                                                          \
+    cells[i]._pot = 0.;                                                        \
   }
 
 #endif // IC_HPP

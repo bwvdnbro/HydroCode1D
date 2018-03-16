@@ -39,6 +39,7 @@
     const double r = cells[i]._midpoint;                                       \
     const double a = -G_INTERNAL * MASS_POINT_MASS / (r * r);                  \
     cells[i]._a = a;                                                           \
+    cells[i]._pot = -G_INTERNAL * MASS_POINT_MASS / r;                         \
     const double m = cells[i]._V * cells[i]._rho;                              \
     cells[i]._p += 0.5 * cells[i]._dt * cells[i]._a * m;                       \
   }
@@ -52,6 +53,7 @@
       const double mcell = Mtot + cells[i]._rho * cells[i]._V_real_half;       \
       const double r = cells[i]._midpoint;                                     \
       cells[i]._a = -G_INTERNAL * mcell / (r * r);                             \
+      cells[i]._pot = -G_INTERNAL * mcell / r;                                 \
       Mtot += cells[i]._rho * cells[i]._V_real;                                \
     }                                                                          \
     /* Now apply gravity to each cell. */                                      \

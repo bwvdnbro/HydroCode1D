@@ -85,6 +85,9 @@ public:
   /*! @brief Gravitational acceleration (in internal units of L T^-2). */
   double _a;
 
+  /*! @brief Gravitational potential (in internal units of L^2 T^-2). */
+  double _pot;
+
   // time step
 
   /*! @brief Integer time step (in integer time units). */
