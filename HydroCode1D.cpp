@@ -39,6 +39,7 @@
 
 // standard libraries
 #include <cfloat>
+#include <cinttypes>
 #include <cmath>
 #include <cstdint>
 #include <ctime>
@@ -51,11 +52,13 @@
  * @brief Custom assertion macro.
  *
  * @param c Condition to assert.
+ * @param m Message to append to the error output.
+ * @param ... Extra parameters for message.
  */
-#define assert_condition(c)                                                    \
+#define assert_condition(c, m, ...)                                            \
   if (!(c)) {                                                                  \
-    std::cerr << __FILE__ << ":" << __FUNCTION__ << "():" << __LINE__          \
-              << ": Assertion failed: " << #c << "!" << std::endl;             \
+    fprintf(stderr, "\n%s:%s():%i: Assertion failed: %s (" m ")!\n\n",         \
+            __FILE__, __FUNCTION__, __LINE__, #c, ##__VA_ARGS__);              \
     exit(1);                                                                   \
   }
 
@@ -154,6 +157,53 @@ static inline uint_fast64_t round_power2_down(uint_fast64_t x) {
   x >>= 1;
   ++x;
   return x;
+}
+
+/**
+ * @brief Pair-wise slope limiter.
+ *
+ * @param phiL Original left state value.
+ * @param phiR Original right state value.
+ * @param phi_dash Unlimited extrapolated value in the left state.
+ * @return Limited extrapolated value in the left state.
+ */
+static inline double pair_wise_limiter(const double phiL, const double phiR,
+                                       const double phi_dash) {
+
+  if (phiL == phiR) {
+
+    return phiL;
+
+  } else {
+
+    const double phibar = phiL + 0.5 * (phiR - phiL);
+    const double phidiff = std::abs(phiL - phiR);
+    const double delta1 = 0.5 * phidiff;
+    const double delta2 = 0.25 * phidiff;
+
+    if (phiL < phiR) {
+
+      const double phi_min = std::min(phiL, phiR);
+      double phimin;
+      if ((phi_min - delta1) * phi_min > 0.) {
+        phimin = phi_min - delta1;
+      } else {
+        phimin = phi_min * std::abs(phi_min) / (std::abs(phi_min) + delta1);
+      }
+      return std::max(phimin, std::min(phibar + delta2, phi_dash));
+
+    } else {
+
+      const double phi_max = std::max(phiL, phiR);
+      double phiplu;
+      if ((phi_max + delta1) * phi_max > 0.) {
+        phiplu = phi_max + delta1;
+      } else {
+        phiplu = phi_max * std::abs(phi_max) / (std::abs(phi_max) + delta1);
+      }
+      return std::min(phiplu, std::max(phibar - delta2, phi_dash));
+    }
+  }
 }
 
 /**
@@ -278,8 +328,10 @@ int main(int argc, char **argv) {
     // apply the equation of state to get the initial pressure (if necessary)
     initial_pressure(cells[i]);
 
-    assert_condition(cells[i]._rho >= 0.);
-    assert_condition(cells[i]._P >= 0.);
+    assert_condition(cells[i]._rho >= 0., "cells[%" PRIiFAST32 "]._rho = %g", i,
+                     cells[i]._rho);
+    assert_condition(cells[i]._P >= 0., "cells[%" PRIiFAST32 "]._P = %g", i,
+                     cells[i]._P);
 
     // use the cell volume to convert primitive into conserved variables
     cells[i]._m = cells[i]._rho * cells[i]._V;
@@ -287,8 +339,10 @@ int main(int argc, char **argv) {
     cells[i]._E = cells[i]._P * cells[i]._V / (GAMMA - 1.) +
                   0.5 * cells[i]._u * cells[i]._p;
 
-    assert_condition(cells[i]._m >= 0.);
-    assert_condition(cells[i]._E >= 0.);
+    assert_condition(cells[i]._m >= 0., "cells[%" PRIiFAST32 "]._m = %g", i,
+                     cells[i]._m);
+    assert_condition(cells[i]._E >= 0., "cells[%" PRIiFAST32 "]._E = %g", i,
+                     cells[i]._E);
 
     // time step criterion
     // only non-vacuum cells are considered for the time step
@@ -359,7 +413,8 @@ int main(int argc, char **argv) {
     reduction(+ : Ekin_tot, Epot_tot, Etherm_tot, Etot_tot)
     for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
 
-      assert_condition(cells[i]._m >= 0.);
+      assert_condition(cells[i]._m >= 0., "cells[%" PRIiFAST32 "]._m = %g", i,
+                       cells[i]._m);
 
       cells[i]._rho = cells[i]._m / cells[i]._V;
       if (cells[i]._m > 0.) {
@@ -512,9 +567,12 @@ int main(int argc, char **argv) {
               : 1.;
       cells[i]._grad_P = alpha_P * gradP;
 
-      assert_condition(cells[i]._grad_rho == cells[i]._grad_rho);
-      assert_condition(cells[i]._grad_u == cells[i]._grad_u);
-      assert_condition(cells[i]._grad_P == cells[i]._grad_P);
+      assert_condition(cells[i]._grad_rho == cells[i]._grad_rho,
+                       "cells[%" PRIiFAST32 "]._grad_rho = NaN", i);
+      assert_condition(cells[i]._grad_u == cells[i]._grad_u,
+                       "cells[%" PRIiFAST32 "]._grad_u = NaN", i);
+      assert_condition(cells[i]._grad_P == cells[i]._grad_P,
+                       "cells[%" PRIiFAST32 "]._grad_P = NaN", i);
     }
 
     // apply boundary conditions for the gradients
@@ -577,17 +635,20 @@ int main(int argc, char **argv) {
         const double uR = cells[i]._u;
         const double PR = cells[i]._P;
 
-        assert_condition(rhoL == rhoL);
-        assert_condition(rhoL >= 0.);
-        assert_condition(uL == uL);
-        assert_condition(PL == PL);
-        assert_condition(PL >= 0.);
+        assert_condition(rhoL == rhoL, "cells[%" PRIiFAST32 "]._rho = NaN",
+                         i - 1);
+        assert_condition(rhoL >= 0., "cells[%" PRIiFAST32 "]._rho = %g", i - 1,
+                         rhoL);
+        assert_condition(uL == uL, "cells[%" PRIiFAST32 "]._u = NaN", i - 1);
+        assert_condition(PL == PL, "cells[%" PRIiFAST32 "]._P = NaN", i - 1);
+        assert_condition(PL >= 0., "cells[%" PRIiFAST32 "]._P = %g", i - 1, PL);
 
-        assert_condition(rhoR == rhoR);
-        assert_condition(rhoR >= 0.);
-        assert_condition(uR == uR);
-        assert_condition(PR == PR);
-        assert_condition(PR >= 0.);
+        assert_condition(rhoR == rhoR, "cells[%" PRIiFAST32 "]._rho = NaN", i);
+        assert_condition(rhoR >= 0., "cells[%" PRIiFAST32 "]._rho = %g", i,
+                         rhoR);
+        assert_condition(uR == uR, "cells[%" PRIiFAST32 "]._u = NaN", i);
+        assert_condition(PR == PR, "cells[%" PRIiFAST32 "]._P = NaN", i);
+        assert_condition(PR >= 0., "cells[%" PRIiFAST32 "]._P = %g", i, PR);
 
         // do the second order spatial reconstruction
         const double dmin = 0.5 * (cells[i]._midpoint - cells[i - 1]._midpoint);
@@ -613,6 +674,14 @@ int main(int argc, char **argv) {
           PR_dash = PR;
         }
 
+        // pair-wise limiter
+        rhoL_dash = pair_wise_limiter(rhoL, rhoR, rhoL_dash);
+        rhoR_dash = pair_wise_limiter(rhoR, rhoL, rhoR_dash);
+        uL_dash = pair_wise_limiter(uL, uR, uL_dash);
+        uR_dash = pair_wise_limiter(uR, uL, uR_dash);
+        PL_dash = pair_wise_limiter(PL, PR, PL_dash);
+        PR_dash = pair_wise_limiter(PR, PL, PR_dash);
+
         // solve the Riemann problem at the interface between the two cells
         double mflux, pflux, Eflux;
         solver.solve_for_flux(rhoL_dash, uL_dash, PL_dash, rhoR_dash, uR_dash,
@@ -621,6 +690,15 @@ int main(int argc, char **argv) {
         cells[i]._m += dt * mflux;
         cells[i]._p += dt * pflux;
         cells[i]._E += dt * Eflux;
+
+        assert_condition(cells[i]._m >= 0., "cells[%" PRIiFAST32 "]._m = %g", i,
+                         cells[i]._m);
+        assert_condition(cells[i]._E >= 0., "cells[%" PRIiFAST32 "]._E = %g", i,
+                         cells[i]._E);
+
+        // make sure mass and energy stay positive
+        //        cells[i]._m = std::max(cells[i]._m, 0.);
+        //        cells[i]._E = std::max(cells[i]._E, 0.);
       }
       // right flux
       {
@@ -632,17 +710,20 @@ int main(int argc, char **argv) {
         const double uR = cells[i + 1]._u;
         const double PR = cells[i + 1]._P;
 
-        assert_condition(rhoL == rhoL);
-        assert_condition(rhoL >= 0.);
-        assert_condition(uL == uL);
-        assert_condition(PL == PL);
-        assert_condition(PL >= 0.);
+        assert_condition(rhoL == rhoL, "cells[%" PRIiFAST32 "]._rho = NaN", i);
+        assert_condition(rhoL >= 0., "cells[%" PRIiFAST32 "]._rho = %g", i,
+                         rhoL);
+        assert_condition(uL == uL, "cells[%" PRIiFAST32 "]._u = NaN", i);
+        assert_condition(PL == PL, "cells[%" PRIiFAST32 "]._P = NaN", i);
+        assert_condition(PL >= 0., "cells[%" PRIiFAST32 "]._P = %g", i, PL);
 
-        assert_condition(rhoR == rhoR);
-        assert_condition(rhoR >= 0.);
-        assert_condition(uR == uR);
-        assert_condition(PR == PR);
-        assert_condition(PR >= 0.);
+        assert_condition(rhoR == rhoR, "cells[%" PRIiFAST32 "]._rho = NaN",
+                         i + 1);
+        assert_condition(rhoR >= 0., "cells[%" PRIiFAST32 "]._rho = %g", i + 1,
+                         rhoR);
+        assert_condition(uR == uR, "cells[%" PRIiFAST32 "]._u = NaN", i + 1);
+        assert_condition(PR == PR, "cells[%" PRIiFAST32 "]._P = NaN", i + 1);
+        assert_condition(PR >= 0., "cells[%" PRIiFAST32 "]._P = %g", i + 1, PR);
 
         // do the second order spatial reconstruction
         const double dmin = 0.5 * (cells[i + 1]._midpoint - cells[i]._midpoint);
@@ -668,6 +749,14 @@ int main(int argc, char **argv) {
           PR_dash = PR;
         }
 
+        // pair-wise limiter
+        rhoL_dash = pair_wise_limiter(rhoL, rhoR, rhoL_dash);
+        rhoR_dash = pair_wise_limiter(rhoR, rhoL, rhoR_dash);
+        uL_dash = pair_wise_limiter(uL, uR, uL_dash);
+        uR_dash = pair_wise_limiter(uR, uL, uR_dash);
+        PL_dash = pair_wise_limiter(PL, PR, PL_dash);
+        PR_dash = pair_wise_limiter(PR, PL, PR_dash);
+
         // solve the Riemann problem at the interface between the two cells
         double mflux, pflux, Eflux;
         solver.solve_for_flux(rhoL_dash, uL_dash, PL_dash, rhoR_dash, uR_dash,
@@ -676,6 +765,15 @@ int main(int argc, char **argv) {
         cells[i]._m -= dt * mflux;
         cells[i]._p -= dt * pflux;
         cells[i]._E -= dt * Eflux;
+
+        assert_condition(cells[i]._m >= 0., "cells[%" PRIiFAST32 "]._m = %g", i,
+                         cells[i]._m);
+        assert_condition(cells[i]._E >= 0., "cells[%" PRIiFAST32 "]._E = %g", i,
+                         cells[i]._E);
+
+        // make sure mass and energy stay positive
+        //        cells[i]._m = std::max(cells[i]._m, 0.);
+        //        cells[i]._E = std::max(cells[i]._E, 0.);
       }
     }
 

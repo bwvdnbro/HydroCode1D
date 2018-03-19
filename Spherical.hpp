@@ -75,6 +75,11 @@
       cells[i]._m = U[0] * cells[i]._V;                                        \
       cells[i]._p = U[1] * cells[i]._V;                                        \
       cells[i]._E = U[2] * cells[i]._V;                                        \
+                                                                               \
+      assert_condition(cells[i]._m >= 0., "cells[%" PRIiFAST32 "]._m = %g", i, \
+                       cells[i]._m);                                           \
+      assert_condition(cells[i]._E >= 0., "cells[%" PRIiFAST32 "]._E = %g", i, \
+                       cells[i]._E);                                           \
     }                                                                          \
   }
 #endif
