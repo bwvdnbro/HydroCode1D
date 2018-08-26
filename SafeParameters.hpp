@@ -69,7 +69,8 @@
 #error "No external potential selected!"
 #else
 #if POTENTIAL != POTENTIAL_NONE && POTENTIAL != POTENTIAL_POINT_MASS &&        \
-    POTENTIAL != POTENTIAL_SELF_GRAVITY
+    POTENTIAL != POTENTIAL_SELF_GRAVITY &&                                     \
+    POTENTIAL != POTENTIAL_PM_SELF_GRAVITY
 #pragma message(value_of_macro(POTENTIAL))
 #error "Invalid potential selected!"
 #endif

@@ -59,6 +59,8 @@
 #define POTENTIAL_POINT_MASS 2
 /*! @brief Spherical gravity. */
 #define POTENTIAL_SELF_GRAVITY 3
+/*! @brief 1D particle mesh self-gravity. */
+#define POTENTIAL_PM_SELF_GRAVITY 4
 
 // Possible types of Riemann solver
 

@@ -31,7 +31,7 @@
 #include "EOS.hpp"               // for equations of state
 #include "HLLCRiemannSolver.hpp" // fast HLLC Riemann solver
 #include "IC.hpp"                // general initial condition interface
-#include "Potential.hpp"         // external gravity
+#include "Potential.hpp"         // (external) gravity
 #include "RiemannSolver.hpp"     // slow exact Riemann solver
 #include "SafeParameters.hpp"    // safe way to include Parameter.hpp
 #include "Spherical.hpp"         // spherical source terms
@@ -266,6 +266,9 @@ int main(int argc, char **argv) {
   std::cout << "Isothermal sound speed: " << std::sqrt(ISOTHERMAL_C_SQUARED)
             << " m s^-1." << std::endl;
 #endif
+
+  // initialize the gravity solver
+  init_gravity(ncell);
 
   // initialize the time line used for time stepping
   // we use a classical power of 2 integer time line as e.g. Gadget2
@@ -798,6 +801,9 @@ int main(int argc, char **argv) {
   // write the final snapshots
   write_snapshot(isnap, current_integer_time * time_conversion_factor, cells,
                  ncell);
+
+  // clean up the gravity solver
+  free_gravity();
 
   // clean up: free cell memory
   delete[] cells;

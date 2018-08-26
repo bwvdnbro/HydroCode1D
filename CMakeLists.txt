@@ -108,6 +108,11 @@ else(OPENMP_FOUND)
   message(ERROR "OpenMP not found!")
 endif(OPENMP_FOUND)
 
+find_path(FFTW_INCLUDES fftw3.h)
+find_library(FFTW_LIBRARIES NAMES fftw3)
+include_directories(${FFTW_INCLUDES})
+link_directories(${FFTW_LIBRARIES})
+
 find_package(Git)
 
 # Add the command and target that creates the CompilerInfo.cpp file
@@ -133,3 +138,4 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math -ftree-vectorize")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Wshadow")
 
 add_executable(HydroCode1D ${SOURCES})
+target_link_libraries(HydroCode1D ${FFTW_LIBRARIES})

@@ -27,6 +27,35 @@
 #ifndef POTENTIAL_HPP
 #define POTENTIAL_HPP
 
+#if POTENTIAL == POTENTIAL_PM_SELF_GRAVITY
+#include "FFTWGravitySolver.hpp"
+#endif
+
+/**
+ * @brief Initialize the gravity solver.
+ *
+ * @param ncell Number of cells in the grid.
+ */
+#if POTENTIAL == POTENTIAL_PM_SELF_GRAVITY
+#define init_gravity(ncell)                                                    \
+  double *rho_grav = new double[ncell];                                        \
+  double *a_grav = new double[ncell];                                          \
+  FFTWGravitySolver pm_solver(ncell, RMAX - RMIN);
+#else
+#define init_gravity(boxsize, ncell)
+#endif
+
+/**
+ * @brief Clean up gravity solver.
+ */
+#if POTENTIAL == POTENTIAL_PM_SELF_GRAVITY
+#define free_gravity()                                                         \
+  delete[] rho_grav;                                                           \
+  delete[] a_grav;
+#else
+#define free_gravity()
+#endif
+
 /**
  * @brief Add the gravitational acceleration.
  *
@@ -66,6 +95,17 @@
       }                                                                        \
       assert_condition(cells[i]._E >= 0., "cells[%" PRIiFAST32 "]._E = %g", i, \
                        cells[i]._E);                                           \
+    }                                                                          \
+  }
+#elif POTENTIAL == POTENTIAL_PM_SELF_GRAVITY
+#define do_gravity(cells, ncell)                                               \
+  {                                                                            \
+    for (uint_fast32_t i = 1; i < ncell + 1; ++i) {                            \
+      rho_grav[i - 1] = cells[i]._rho;                                         \
+    }                                                                          \
+    pm_solver.compute_accelerations(rho_grav, a_grav);                         \
+    for (uint_fast32_t i = 1; i < ncell + 1; ++i) {                            \
+      cells[i]._a = a_grav[i - 1];                                             \
     }                                                                          \
   }
 #elif POTENTIAL == POTENTIAL_NONE
