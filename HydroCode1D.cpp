@@ -375,7 +375,6 @@ int main(int argc, char **argv) {
   double time_since_last = 0.;
   double time_since_start = 0.;
   unsigned int steps_since_last = 0;
-  uint_fast64_t isnap = 0;
   // main simulation loop: perform NSTEP steps
   while (current_integer_time < integer_maxtime) {
 
@@ -449,10 +448,9 @@ int main(int argc, char **argv) {
     set_timesteps(min_physical_dt);
 
     // check if we need to output a snapshot
-    if (current_integer_time >= isnap * snaptime) {
+    if (do_write_snapshot()) {
       // write the actual snapshot
-      write_snapshot(isnap, current_integer_time * time_conversion_factor,
-                     cells, ncell);
+      write_snapshot(isnap, t, cells, ncell);
       ++isnap;
     }
 
@@ -466,8 +464,8 @@ int main(int argc, char **argv) {
       // time
       const double pct = current_integer_time * 100. / integer_maxtime;
       std::cout << get_timestamp() << "\t" << ncell << ": "
-                << "time " << current_integer_time * time_conversion_factor
-                << " of " << maxtime << " (" << pct << " %)" << std::endl;
+                << "time " << t << " of " << maxtime << " (" << pct << " %)"
+                << std::endl;
       std::cout << "\t\t\tSystem time step: "
                 << current_integer_dt * time_conversion_factor << std::endl;
       const double avg_time_since_last = time_since_last / steps_since_last;
@@ -762,12 +760,11 @@ int main(int argc, char **argv) {
     step_time.reset();
 
     // update the system time
-    current_integer_time += current_integer_dt;
+    do_timestep();
   }
 
   // write the final snapshots
-  write_snapshot(isnap, current_integer_time * time_conversion_factor, cells,
-                 ncell);
+  write_snapshot(isnap, current_physical_time(), cells, ncell);
 
   // clean up the gravity solver
   free_gravity();

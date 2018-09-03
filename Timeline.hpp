@@ -37,7 +37,8 @@
   const double max_physical_dt = initial_dt;                                   \
   uint_fast64_t current_integer_time = 0;                                      \
   uint_fast64_t snaptime = integer_maxtime / NUMBER_OF_SNAPS;                  \
-  uint_fast64_t current_integer_dt = snaptime;
+  uint_fast64_t current_integer_dt = snaptime;                                 \
+  uint_fast64_t isnap = 0;
 
 /**
  * @brief Set the timesteps for all cells.
@@ -67,5 +68,15 @@
  */
 #define current_physical_time()                                                \
   (current_integer_time * maxtime / integer_maxtime)
+
+/**
+ * @brief Write a snapshot?
+ */
+#define do_write_snapshot() (current_integer_time >= isnap * snaptime)
+
+/**
+ * @brief Step forward in time.
+ */
+#define do_timestep() current_integer_time += current_integer_dt;
 
 #endif // TIMELINE_HPP
