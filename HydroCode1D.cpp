@@ -35,6 +35,7 @@
 #include "RiemannSolver.hpp"     // slow exact Riemann solver
 #include "SafeParameters.hpp"    // safe way to include Parameter.hpp
 #include "Spherical.hpp"         // spherical source terms
+#include "Timeline.hpp"          // time stepping routines
 #include "Timer.hpp"             // program timers
 
 // standard libraries
@@ -270,11 +271,8 @@ int main(int argc, char **argv) {
   // initialize the gravity solver
   init_gravity(ncell);
 
-  // initialize the time line used for time stepping
-  // we use a classical power of 2 integer time line as e.g. Gadget2
-  const double maxtime = MAXTIME;
-  const uint_fast64_t integer_maxtime = 0x8000000000000000; // 2^63
-  const double time_conversion_factor = maxtime / integer_maxtime;
+  // initialize the time stepping
+  init_timeline();
 
   // create the 1D spherical grid
   // we create 2 ghost cells to the left and to the right of the simulation box
@@ -306,9 +304,8 @@ int main(int argc, char **argv) {
          cells[i]._lowlim * cells[i]._lowlim * cells[i]._lowlim);
 #endif
     cells[i]._integer_dt = 0;
-    // initialize the time step to a sensible value: the requested snapshot time
-    // interval
-    cells[i]._dt = (MAXTIME / NUMBER_OF_SNAPS);
+    // initialize the time step to a sensible value
+    cells[i]._dt = initial_dt;
   }
 
   // set up the initial condition
@@ -324,8 +321,8 @@ int main(int argc, char **argv) {
   // convert the input primitive variables into conserved variables, and compute
   // the initial time step
   // we use a global time step, which is the minimum time step among all cells
-  uint_fast64_t min_integer_dt = integer_maxtime;
-#pragma omp parallel for reduction(min : min_integer_dt)
+  double min_physical_dt = max_physical_dt;
+#pragma omp parallel for reduction(min : min_physical_dt)
   // convert primitive variables to conserved variables
   for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
     // apply the equation of state to get the initial pressure (if necessary)
@@ -353,24 +350,13 @@ int main(int argc, char **argv) {
       const double cs = std::sqrt(GAMMA * cells[i]._P / cells[i]._rho) +
                         std::abs(cells[i]._u);
       const double dt = courant_factor * cells[i]._V / cs;
-      const uint_fast64_t integer_dt = (dt / maxtime) * integer_maxtime;
-      min_integer_dt = std::min(min_integer_dt, integer_dt);
+      min_physical_dt = std::min(min_physical_dt, dt);
     }
   }
 
-  // set cell time steps
-  // round min_integer_dt to closest smaller power of 2
-  uint_fast64_t global_integer_dt = round_power2_down(min_integer_dt);
-#pragma omp parallel for
-  for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
-    cells[i]._integer_dt = global_integer_dt;
-    cells[i]._dt = cells[i]._integer_dt * time_conversion_factor;
-  }
+  // set the cell timesteps based on the maximum allowed physical timestep
+  set_timesteps(min_physical_dt);
 
-// initialize the Riemann solver
-// we use a fast HLLC solver
-// replace "HLLCRiemannSolver" with "RiemannSolver" to use a slower, exact
-// solver
 #if RIEMANNSOLVER_TYPE == RIEMANNSOLVER_TYPE_HLLC
   HLLCRiemannSolver solver(GAMMA);
 #elif RIEMANNSOLVER_TYPE == RIEMANNSOLVER_TYPE_EXACT
@@ -382,18 +368,13 @@ int main(int argc, char **argv) {
   efile << "# t (s)\tEkin (kg m^2 s^-2)\tEpot (kg m^2 s^-2)\tEtherm (kg m^2 "
            "s^-2)\tEtot (kg m^2 s^-2)\n";
 
-  // initialize some variables used to guesstimate the remaing run time
+  // initialize some variables used to guesstimate the remaining run time
   double last_stat_time = total_time.interval();
   const double stat_interval = 60.; // stat output every minute
   Timer step_time;
   double time_since_last = 0.;
   double time_since_start = 0.;
   unsigned int steps_since_last = 0;
-  // initialize the time stepping
-  uint_fast64_t current_integer_time = 0;
-  uint_fast64_t current_integer_dt = global_integer_dt;
-  // initialize snapshot variables
-  const uint_fast64_t snaptime = integer_maxtime / NUMBER_OF_SNAPS;
   uint_fast64_t isnap = 0;
   // main simulation loop: perform NSTEP steps
   while (current_integer_time < integer_maxtime) {
@@ -410,9 +391,9 @@ int main(int argc, char **argv) {
     // update the primitive variables based on the values of the conserved
     // variables and the current cell volume
     // also compute the new time step
-    min_integer_dt = snaptime;
+    min_physical_dt = max_physical_dt;
     double Ekin_tot = 0., Epot_tot = 0., Etherm_tot = 0., Etot_tot = 0.;
-#pragma omp parallel for reduction(min : min_integer_dt)                       \
+#pragma omp parallel for reduction(min : min_physical_dt)                      \
     reduction(+ : Ekin_tot, Epot_tot, Etherm_tot, Etot_tot)
     for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
 
@@ -433,8 +414,7 @@ int main(int argc, char **argv) {
         const double cs = std::sqrt(GAMMA * cells[i]._P / cells[i]._rho) +
                           std::abs(cells[i]._u);
         const double dt = courant_factor * cells[i]._V / cs;
-        const uint_fast64_t integer_dt = (dt / maxtime) * integer_maxtime;
-        min_integer_dt = std::min(min_integer_dt, integer_dt);
+        min_physical_dt = std::min(min_physical_dt, dt);
       }
 
       // energy statistics
@@ -462,24 +442,11 @@ int main(int argc, char **argv) {
     }
 
     // now output energy statistics
-    const double t = current_integer_time * maxtime / integer_maxtime;
+    const double t = current_physical_time();
     efile << t << "\t" << Ekin_tot << "\t" << Epot_tot << "\t" << Etherm_tot
           << "\t" << Etot_tot << "\n";
 
-    // round min_integer_dt to closest smaller power of 2
-    global_integer_dt = round_power2_down(min_integer_dt);
-    // make sure the remaining time can be filled *exactly* with the current
-    // time step
-    while ((integer_maxtime - current_integer_time) % global_integer_dt > 0) {
-      global_integer_dt >>= 1;
-    }
-// set the new cell time steps
-#pragma omp parallel for
-    for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
-      cells[i]._integer_dt = global_integer_dt;
-      cells[i]._dt = cells[i]._integer_dt * time_conversion_factor;
-    }
-    current_integer_dt = global_integer_dt;
+    set_timesteps(min_physical_dt);
 
     // check if we need to output a snapshot
     if (current_integer_time >= isnap * snaptime) {
