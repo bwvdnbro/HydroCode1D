@@ -1,0 +1,74 @@
+/*******************************************************************************
+ * This file is part of HydroCode1D
+ * Copyright (C) 2018 Bert Vandenbroucke (bert.vandenbroucke@gmail.com)
+ *
+ * HydroCode1D is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * HydroCode1D is distributed in the hope that it will be useful,
+ * but WITOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with HydroCode1D. If not, see <http://www.gnu.org/licenses/>.
+ ******************************************************************************/
+
+/**
+ * @file UserInput.hpp
+ *
+ * @brief User specific code.
+ *
+ * Predefined versions of this file exist and can be selected during
+ * configuration by setting the -Dpredefined_test variable.
+ *
+ * @author Bert Vandenbroucke (bv7@st-andrews.ac.uk)
+ */
+
+#include <cmath>
+
+/**
+ * @brief Get the initial condition for the given spatial coordinate.
+ *
+ * @param x Spatial coordinate (in m).
+ * @param rho Density variable to set (in kg m^-3).
+ * @param u Fluid velocity variable to set (in m s^-1).
+ * @param P Pressure variable to set (in kg m^-2 s^-2).
+ */
+inline void get_initial_hydro_variables(const double x, double &rho, double &u,
+                                        double &P) {
+
+  // frequency of the initial perturbation
+  const double k_i = 2. * M_PI / (RMAX_IN_M - RMIN_IN_M);
+
+  // initial redshift
+  const double z_i = 100.;
+  // redshift of collapse
+  const double z_c = 1.;
+  // redshift prefactor
+  const double zfac = (1. + z_c) / (1. + z_i);
+
+  // critical density
+  const double rho_0 =
+      3. * HUBBLE_IN_SI * HUBBLE_IN_SI / (8. * M_PI * NEWTON_G_IN_SI);
+
+  rho = rho_0 / (1. - zfac * std::cos(k_i * x));
+  u = -HUBBLE_IN_SI * (1. + z_c) / std::sqrt(1. + z_i) * std::sin(k_i * x) /
+      k_i;
+
+  // initial temperature
+  const double T_i = 100.;
+
+  // temperature
+  const double T = T_i * std::pow((rho / rho_0), 2. / 3.);
+
+  // pressure
+  P = rho * T * BOLTZMANN_K_IN_SI / HYDROGEN_MASS_IN_SI;
+}
+
+#if BOUNDARIES == BOUNDARIES_CUSTOM
+#error                                                                         \
+    "The Zel'dovich pancake test should be run with periodic boundary conditions!"
+#endif
