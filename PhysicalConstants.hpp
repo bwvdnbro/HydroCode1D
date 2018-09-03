@@ -44,4 +44,7 @@
 /*! @brief Astronomical unit (in m). */
 #define AU_IN_SI 1.496e11
 
+/*! @brief Rounded up Hubble constant (in s^-1). */
+#define HUBBLE_IN_SI 3.241e-18
+
 #endif // PHYSICALCONSTANTS_HPP

@@ -42,7 +42,7 @@
   double *a_grav = new double[ncell];                                          \
   FFTWGravitySolver pm_solver(ncell, RMAX - RMIN);
 #else
-#define init_gravity(boxsize, ncell)
+#define init_gravity(ncell)
 #endif
 
 /**

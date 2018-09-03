@@ -115,6 +115,14 @@ link_directories(${FFTW_LIBRARIES})
 
 find_package(Git)
 
+find_package(GSL)
+if(GSL_FOUND)
+  include_directories(${GSL_INCLUDE_DIRS})
+  link_directories(${GSL_LIBRARIES})
+else(GSL_FOUND)
+  message(ERROR "GSL not found!")
+endif(GSL_FOUND)
+
 # Add the command and target that creates the CompilerInfo.cpp file
 # Note that we need to add the 'dummy_file_that_is_not_created' to the outputs
 # to force rerunnning this command every time the code is compiled
@@ -139,3 +147,4 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Wshadow")
 
 add_executable(HydroCode1D ${SOURCES})
 target_link_libraries(HydroCode1D ${FFTW_LIBRARIES})
+target_link_libraries(HydroCode1D ${GSL_LIBRARIES})
