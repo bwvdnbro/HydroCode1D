@@ -28,6 +28,10 @@
 
 #include "SafeParameters.hpp"
 
+#if TIMELINE_TYPE == TIMELINE_COMOVING
+#include "Cosmology.hpp"
+#endif
+
 /**
  * @brief Initialize the time stepping variables.
  */
@@ -42,7 +46,16 @@
   uint_fast64_t snaptime = integer_maxtime / NUMBER_OF_SNAPS;                  \
   uint_fast64_t current_integer_dt = snaptime;
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
-#define timeline_init()
+#define timeline_init()                                                        \
+  Cosmology cosmo(1., 0., 0., 0., 0., 0., 1., 0.00990099, 1.);                 \
+  double current_scale_factor = 0.00990099;                                    \
+  const uint_fast64_t integer_maxtime = 0x8000000000000000;                    \
+  const double maxtime = -std::log(0.00990099);                                \
+  uint_fast64_t current_integer_time = 0;                                      \
+  uint_fast64_t current_integer_dt = 0;                                        \
+  double source_dt, gravity_dt, hydro_dt;                                      \
+  uint_fast64_t snaptime = integer_maxtime / NUMBER_OF_SNAPS;                  \
+  (void)source_dt, (void)gravity_dt;
 #endif
 
 /**
@@ -62,7 +75,25 @@
     }                                                                          \
   }
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
-#define timeline_set_timestep(min_physical_dt)
+#define timeline_set_timestep(min_physical_dt)                                 \
+  {                                                                            \
+    const uint_fast64_t min_integer_dt =                                       \
+        (-std::log(cosmo.get_scale_factor_interval(current_scale_factor,       \
+                                                   min_physical_dt)) /         \
+         maxtime) *                                                            \
+        integer_maxtime;                                                       \
+    current_integer_dt = round_power2_down(min_integer_dt);                    \
+    while ((integer_maxtime - current_integer_time) % current_integer_dt >     \
+           0) {                                                                \
+      current_integer_dt >>= 1;                                                \
+    }                                                                          \
+    const double a_stop =                                                      \
+        std::exp(std::log(current_scale_factor) +                              \
+                 (maxtime * current_integer_dt) / integer_maxtime);            \
+    source_dt = cosmo.get_factor_a2inv(current_scale_factor, a_stop);          \
+    gravity_dt = cosmo.get_factor_a2inv(current_scale_factor, a_stop);         \
+    hydro_dt = cosmo.get_factor_a2inv(current_scale_factor, a_stop);           \
+  }
 #endif
 
 /**
@@ -73,7 +104,7 @@
 #if TIMELINE_TYPE == TIMELINE_NORMAL
 #define timeline_next_step() (current_integer_time < integer_maxtime)
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
-#define timeline_next_step() false
+#define timeline_next_step() (current_integer_time < integer_maxtime)
 #endif
 
 /**
@@ -85,7 +116,7 @@
 #define timeline_get_system_source_dt()                                        \
   (current_integer_dt * time_conversion_factor)
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
-#define timeline_get_system_source_dt() 0.
+#define timeline_get_system_source_dt() source_dt
 #endif
 
 /**
@@ -97,7 +128,7 @@
 #define timeline_get_system_gravity_dt()                                       \
   (current_integer_dt * time_conversion_factor)
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
-#define timeline_get_system_gravity_dt() 0.
+#define timeline_get_system_gravity_dt() gravity_dt
 #endif
 
 /**
@@ -109,7 +140,7 @@
 #define timeline_get_system_hydro_dt()                                         \
   (current_integer_dt * time_conversion_factor)
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
-#define timeline_get_system_hydro_dt() 0.
+#define timeline_get_system_hydro_dt() hydro_dt
 #endif
 
 /**
@@ -120,7 +151,7 @@
 #if TIMELINE_TYPE == TIMELINE_NORMAL
 #define timeline_get_max_physical_dt() (max_physical_dt)
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
-#define timeline_get_max_physical_dt() 0.
+#define timeline_get_max_physical_dt() 1.e100
 #endif
 
 /**
@@ -132,7 +163,8 @@
 #define timeline_get_current_physical_time()                                   \
   (current_integer_time * maxtime / integer_maxtime)
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
-#define timeline_get_current_physical_time() 0.
+#define timeline_get_current_physical_time()                                   \
+  cosmo.get_time_since_big_bang(current_scale_factor)
 #endif
 
 /**
@@ -143,7 +175,7 @@
 #if TIMELINE_TYPE == TIMELINE_NORMAL
 #define timeline_do_write_snapshot() (current_integer_time >= isnap * snaptime)
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
-#define timeline_do_write_snapshot() false
+#define timeline_do_write_snapshot() (current_integer_time >= isnap * snaptime)
 #endif
 
 /**
@@ -165,7 +197,10 @@
 #if TIMELINE_TYPE == TIMELINE_NORMAL
 #define timeline_do_timestep() current_integer_time += current_integer_dt;
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
-#define timeline_do_timestep()
+#define timeline_do_timestep()                                                 \
+  current_integer_time += current_integer_dt;                                  \
+  current_scale_factor = std::exp(                                             \
+      ((1. * current_integer_time) / integer_maxtime - 1.) * maxtime);
 #endif
 
 /**
