@@ -272,7 +272,7 @@ int main(int argc, char **argv) {
   init_gravity(ncell);
 
   // initialize the time stepping
-  init_timeline();
+  timeline_init();
 
   // create the 1D spherical grid
   // we create 2 ghost cells to the left and to the right of the simulation box
@@ -303,9 +303,6 @@ int main(int argc, char **argv) {
         (cells[i]._midpoint * cells[i]._midpoint * cells[i]._midpoint -
          cells[i]._lowlim * cells[i]._lowlim * cells[i]._lowlim);
 #endif
-    cells[i]._integer_dt = 0;
-    // initialize the time step to a sensible value
-    cells[i]._dt = initial_dt;
   }
 
   // set up the initial condition
@@ -382,10 +379,11 @@ int main(int argc, char **argv) {
     step_time.start();
 
     // add the spherical source term. Handled by Spherical.hpp
-    add_spherical_source_term(cells, ncell);
+    add_spherical_source_term(cells, ncell,
+                              current_integer_dt * time_conversion_factor);
 
     // do first gravity kick, handled by Potential.hpp
-    do_gravity(cells, ncell);
+    do_gravity(cells, ncell, current_integer_dt * time_conversion_factor);
 
     // update the primitive variables based on the values of the conserved
     // variables and the current cell volume
@@ -551,7 +549,7 @@ int main(int argc, char **argv) {
 // using the Euler equations and the spatial gradients within the cells
 #pragma omp parallel for
     for (uint_fast32_t i = 0; i < ncell + 2; ++i) {
-      const double half_dt = 0.5 * cells[i]._dt;
+      const double half_dt = 0.5 * current_integer_dt * time_conversion_factor;
       const double rho = cells[i]._rho;
       const double u = cells[i]._u;
       const double P = cells[i]._P;
@@ -592,7 +590,7 @@ int main(int argc, char **argv) {
 // cell at a time
 #pragma omp parallel for
     for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
-      const double dt = cells[i]._dt;
+      const double dt = current_integer_dt * time_conversion_factor;
       // left flux
       {
         // get the variables in the left and right state
@@ -747,11 +745,12 @@ int main(int argc, char **argv) {
 
     // add the spherical source term
     // handled by Spherical.hpp
-    add_spherical_source_term(cells, ncell);
+    add_spherical_source_term(cells, ncell,
+                              current_integer_dt * time_conversion_factor);
 
     // do the second gravity kick
     // handled by Potential.hpp
-    do_gravity(cells, ncell);
+    do_gravity(cells, ncell, current_integer_dt * time_conversion_factor);
 
     // stop the step timer, and update guesstimate counters
     step_time.stop();

@@ -85,4 +85,11 @@
 /*! @brief Second order. */
 #define HYDRO_ORDER_2 2
 
+// Possible types of time stepping
+
+/*! @brief Normal time stepping. */
+#define TIMELINE_NORMAL 1
+/*! @brief Co-moving time integration. */
+#define TIMELINE_COMOVING 2
+
 #endif // OPTIONNAMES_HPP

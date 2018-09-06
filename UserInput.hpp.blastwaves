@@ -41,7 +41,7 @@ inline void get_initial_hydro_variables(const double x, double &rho, double &u,
   rho = 1.;
   if (x < 0.1) {
     P = 1000.;
-  } else if(x > 0.9) {
+  } else if (x > 0.9) {
     P = 100.;
   } else {
     P = 0.01;

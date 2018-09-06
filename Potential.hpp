@@ -63,17 +63,17 @@
  * @param ncell Number of cells.
  */
 #if POTENTIAL == POTENTIAL_POINT_MASS
-#define do_gravity(cells, ncell) /* add gravitational acceleration */          \
+#define do_gravity(cells, ncell, dt) /* add gravitational acceleration */      \
   _Pragma("omp parallel for") for (uint_fast32_t i = 1; i < ncell + 1; ++i) {  \
     const double r = cells[i]._midpoint;                                       \
     const double a = -G_INTERNAL * MASS_POINT_MASS / (r * r);                  \
     cells[i]._a = a;                                                           \
     cells[i]._pot = -G_INTERNAL * MASS_POINT_MASS / r;                         \
     const double m = cells[i]._V * cells[i]._rho;                              \
-    cells[i]._p += 0.5 * cells[i]._dt * cells[i]._a * m;                       \
+    cells[i]._p += 0.5 * dt * cells[i]._a * m;                                 \
   }
 #elif POTENTIAL == POTENTIAL_SELF_GRAVITY
-#define do_gravity(cells, ncell)                                               \
+#define do_gravity(cells, ncell, dt)                                           \
   {                                                                            \
     double Mtot = 0.;                                                          \
     /* Get the acceleration for each cell (needs to be evaluated in a fixed    \
@@ -89,7 +89,7 @@
     _Pragma("omp parallel for") for (uint_fast32_t i = 1; i < ncell + 1;       \
                                      ++i) {                                    \
       if (cells[i]._m > 0.) {                                                  \
-        const double gravfac = 0.5 * cells[i]._dt * cells[i]._a;               \
+        const double gravfac = 0.5 * dt * cells[i]._a;                         \
         cells[i]._E += gravfac * cells[i]._p;                                  \
         cells[i]._p += gravfac * cells[i]._m;                                  \
       }                                                                        \
@@ -98,7 +98,7 @@
     }                                                                          \
   }
 #elif POTENTIAL == POTENTIAL_PM_SELF_GRAVITY
-#define do_gravity(cells, ncell)                                               \
+#define do_gravity(cells, ncell, dt)                                           \
   {                                                                            \
     for (uint_fast32_t i = 1; i < ncell + 1; ++i) {                            \
       rho_grav[i - 1] = cells[i]._rho;                                         \
@@ -109,7 +109,7 @@
     }                                                                          \
   }
 #elif POTENTIAL == POTENTIAL_NONE
-#define do_gravity(cells, ncell)
+#define do_gravity(cells, ncell, dt)
 #endif
 
 /**

@@ -122,6 +122,16 @@
 #endif
 #endif
 
+// check time stepping type
+#ifndef TIMELINE_TYPE
+#error "No time line type selected!"
+#else
+#if TIMELINE_TYPE != TIMELINE_NORMAL && TIMELINE_TYPE != TIMELINE_COMOVING
+#pragma message(value_of_macro(TIMELINE_TYPE))
+#error "Invalid time stepping type selected!"
+#endif
+#endif
+
 // include derived parameters
 #include "DerivedParameters.hpp"
 

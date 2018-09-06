@@ -26,10 +26,13 @@
 #ifndef TIMELINE_HPP
 #define TIMELINE_HPP
 
+#include "SafeParameters.hpp"
+
 /**
  * @brief Initialize the time stepping variables.
  */
-#define init_timeline()                                                        \
+#if TIMELINE_TYPE == TIMELINE_NORMAL
+#define timeline_init()                                                        \
   const double maxtime = MAXTIME;                                              \
   const uint_fast64_t integer_maxtime = 0x8000000000000000;                    \
   const double time_conversion_factor = maxtime / integer_maxtime;             \
@@ -39,12 +42,25 @@
   uint_fast64_t snaptime = integer_maxtime / NUMBER_OF_SNAPS;                  \
   uint_fast64_t current_integer_dt = snaptime;                                 \
   uint_fast64_t isnap = 0;
+#elif TIMELINE_TYPE == TIMELINE_COMOVING
+#define timeline_init()                                                        \
+  const double initial_dt = 0.;                                                \
+  uint_fast64_t isnap = 0;                                                     \
+  const double maxtime = MAXTIME;                                              \
+  const uint_fast64_t integer_maxtime = 0x8000000000000000;                    \
+  uint_fast64_t current_integer_time = 0;                                      \
+  const double max_physical_dt = initial_dt;                                   \
+  uint_fast64_t snaptime = integer_maxtime / NUMBER_OF_SNAPS;                  \
+  uint_fast64_t current_integer_dt = snaptime;                                 \
+  const double time_conversion_factor = maxtime / integer_maxtime;
+#endif
 
 /**
  * @brief Set the timesteps for all cells.
  *
  * @param Maximum allowed physical timestep.
  */
+#if TIMELINE_TYPE == TIMELINE_NORMAL
 #define set_timesteps(min_physical_dt)                                         \
   {                                                                            \
     const uint_fast64_t min_integer_dt =                                       \
@@ -54,29 +70,39 @@
            0) {                                                                \
       current_integer_dt >>= 1;                                                \
     }                                                                          \
-    _Pragma("omp parallel for") for (uint_fast32_t i = 1; i < ncell + 1;       \
-                                     ++i) {                                    \
-      cells[i]._integer_dt = current_integer_dt;                               \
-      cells[i]._dt = cells[i]._integer_dt * time_conversion_factor;            \
-    }                                                                          \
   }
+#elif TIMELINE_TYPE == TIMELINE_COMOVING
+#define set_timesteps(min_physical_dt)
+#endif
 
 /**
  * @brief Get the current physical time of the simulation.
  *
  * @return Current physical time of the simulation.
  */
+#if TIMELINE_TYPE == TIMELINE_NORMAL
 #define current_physical_time()                                                \
   (current_integer_time * maxtime / integer_maxtime)
+#elif TIMELINE_TYPE == TIMELINE_COMOVING
+#define current_physical_time() 0.
+#endif
 
 /**
  * @brief Write a snapshot?
  */
+#if TIMELINE_TYPE == TIMELINE_NORMAL
 #define do_write_snapshot() (current_integer_time >= isnap * snaptime)
+#elif TIMELINE_TYPE == TIMELINE_COMOVING
+#define do_write_snapshot() false
+#endif
 
 /**
  * @brief Step forward in time.
  */
+#if TIMELINE_TYPE == TIMELINE_NORMAL
 #define do_timestep() current_integer_time += current_integer_dt;
+#elif TIMELINE_TYPE == TIMELINE_COMOVING
+#define do_timestep()
+#endif
 
 #endif // TIMELINE_HPP

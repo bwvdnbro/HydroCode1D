@@ -87,14 +87,6 @@ public:
 
   /*! @brief Gravitational potential (in internal units of L^2 T^-2). */
   double _pot;
-
-  // time step
-
-  /*! @brief Integer time step (in integer time units). */
-  uint_fast64_t _integer_dt;
-
-  /*! @brief Physical time step (in internal units of T). */
-  double _dt;
 };
 
 #endif // CELL_HPP

@@ -78,6 +78,7 @@ check_configuration_option(courant_factor 0.4)
 check_configuration_option(riemannsolver_type "RIEMANNSOLVER_TYPE_EXACT")
 check_configuration_option(dimensionality "DIMENSIONALITY_1D")
 check_configuration_option(hydro_order "HYDRO_ORDER_2")
+check_configuration_option(timeline_type "TIMELINE_NORMAL")
 
 configure_file(${PROJECT_SOURCE_DIR}/Parameters.hpp.in
                ${PROJECT_BINARY_DIR}/Parameters.hpp @ONLY)

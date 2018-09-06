@@ -89,6 +89,9 @@
 /*! @brief Hydro integration scheme order (set by the configuration). */
 #define HYDRO_ORDER @hydro_order@
 
+/*! @brief Type of time stepping (set by the configuration). */
+#define TIMELINE_TYPE @timeline_type@
+
 /*! @brief Number of configuration options. */
 #define CONFIGURATION_NUMBER (@CONFIGURATION_NUMBER@)
 

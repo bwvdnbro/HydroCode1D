@@ -46,15 +46,14 @@
  * @param ncell Number of cells.
  */
 #if DIMENSIONALITY == DIMENSIONALITY_1D
-#define add_spherical_source_term(cells, ncell)
+#define add_spherical_source_term(cells, ncell, dt)
 #else
-#define add_spherical_source_term(cells, ncell)                                \
+#define add_spherical_source_term(cells, ncell, dt)                            \
   _Pragma("omp parallel for") for (uint_fast32_t i = 1; i < ncell + 1; ++i) {  \
     if (cells[i]._m > 0.) {                                                    \
       const double r = cells[i]._midpoint;                                     \
       const double rinv = DIMENSIONALITY_ALPHA / r;                            \
       const double Vinv = 1. / cells[i]._V;                                    \
-      const double dt = cells[i]._dt;                                          \
       const double Ui[3] = {cells[i]._m * Vinv, cells[i]._p * Vinv,            \
                             cells[i]._E * Vinv};                               \
       const double Ui0inv = 1. / Ui[0];                                        \

@@ -200,25 +200,21 @@ inline void get_initial_hydro_variables(const double x, double &rho, double &u,
  *
  * This routine is used to apply boundary conditions to the left boundary.
  *
- * @param dt_left Time step for the cell next to the left boundary (in s).
  * @param rho_left Density for the cell next to the left boundary (in kg m^-3).
  * @param u_left Fluid velocity for the cell next to the left boundary
  * (in m s^-1).
  * @param P_left Pressure for the cell next to the left boundary
  * (in kg m^-2 s^-2).
  * @param x_ghost Position of the ghost cell (in m).
- * @param dt_ghost Ghost cell time step to set (in s).
  * @param rho_ghost Ghost cell density to set (in kg m^-3).
  * @param u_ghost Ghost cell fluid velocity to set (in m s^-1).
  * @param P_ghost Ghost cell pressure to set (in kg m^-2 s^-2).
  */
-inline void get_left_boundary(const double dt_left, const double rho_left,
-                              const double u_left, const double P_left,
-                              const double x_ghost, double &dt_ghost,
+inline void get_left_boundary(const double rho_left, const double u_left,
+                              const double P_left, const double x_ghost,
                               double &rho_ghost, double &u_ghost,
                               double &P_ghost) {
   // open inner boundary (outflow boundary)
-  dt_ghost = dt_left;
   rho_ghost = rho_left;
   u_ghost = u_left;
   P_ghost = P_left;
@@ -229,7 +225,6 @@ inline void get_left_boundary(const double dt_left, const double rho_left,
  *
  * This routine is used to apply boundary conditions to the right boundary.
  *
- * @param dt_right Time step for the cell next to the right boundary (in s).
  * @param rho_right Density for the cell next to the right boundary
  * (in kg m^-3).
  * @param u_right Fluid velocity for the cell next to right left boundary
@@ -237,18 +232,15 @@ inline void get_left_boundary(const double dt_left, const double rho_left,
  * @param P_right Pressure for the cell next to the right boundary
  * (in kg m^-2 s^-2).
  * @param x_ghost Position of the ghost cell (in m).
- * @param dt_ghost Ghost cell time step to set (in s).
  * @param rho_ghost Ghost cell density to set (in kg m^-3).
  * @param u_ghost Ghost cell fluid velocity to set (in m s^-1).
  * @param P_ghost Ghost cell pressure to set (in kg m^-2 s^-2).
  */
-inline void get_right_boundary(const double dt_right, const double rho_right,
-                               const double u_right, const double P_right,
-                               const double x_ghost, double &dt_ghost,
+inline void get_right_boundary(const double rho_right, const double u_right,
+                               const double P_right, const double x_ghost,
                                double &rho_ghost, double &u_ghost,
                                double &P_ghost) {
   // Bondi inflow
-  dt_ghost = dt_right;
   const double rinv = BONDI_RADIUS / x_ghost;
   rho_ghost = bondi_density(rinv);
   u_ghost = bondi_velocity(rinv);
