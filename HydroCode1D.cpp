@@ -269,7 +269,7 @@ int main(int argc, char **argv) {
 #endif
 
   // initialize the gravity solver
-  init_gravity(ncell);
+  gravity_init(ncell);
 
   // initialize the time stepping
   timeline_init();
@@ -307,7 +307,7 @@ int main(int argc, char **argv) {
 
   // set up the initial condition
   // this bit is handled by IC.hpp, and user specific code in UserInput.hpp
-  initialize(cells, ncell);
+  ic_initialize(cells, ncell);
 
   // Courant factor for the CFL time step criterion
   // we use a very conservative value
@@ -318,7 +318,7 @@ int main(int argc, char **argv) {
   // convert the input primitive variables into conserved variables, and compute
   // the initial time step
   // we use a global time step, which is the minimum time step among all cells
-  double min_physical_dt = max_physical_dt;
+  double min_physical_dt = timeline_get_max_physical_dt();
 #pragma omp parallel for reduction(min : min_physical_dt)
   // convert primitive variables to conserved variables
   for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
@@ -351,8 +351,8 @@ int main(int argc, char **argv) {
     }
   }
 
-  // set the cell timesteps based on the maximum allowed physical timestep
-  set_timesteps(min_physical_dt);
+  // set the system time step based on the maximum allowed physical timestep
+  timeline_set_timestep(min_physical_dt);
 
 #if RIEMANNSOLVER_TYPE == RIEMANNSOLVER_TYPE_HLLC
   HLLCRiemannSolver solver(GAMMA);
@@ -372,23 +372,23 @@ int main(int argc, char **argv) {
   double time_since_last = 0.;
   double time_since_start = 0.;
   unsigned int steps_since_last = 0;
+  uint_fast64_t isnap = timeline_get_initial_snap_index();
   // main simulation loop: perform NSTEP steps
-  while (current_integer_time < integer_maxtime) {
+  while (timeline_next_step()) {
 
     // start the step timer
     step_time.start();
 
     // add the spherical source term. Handled by Spherical.hpp
-    add_spherical_source_term(cells, ncell,
-                              current_integer_dt * time_conversion_factor);
+    add_spherical_source_term(cells, ncell, timeline_get_system_source_dt());
 
     // do first gravity kick, handled by Potential.hpp
-    do_gravity(cells, ncell, current_integer_dt * time_conversion_factor);
+    do_gravity(cells, ncell, timeline_get_system_gravity_dt());
 
     // update the primitive variables based on the values of the conserved
     // variables and the current cell volume
     // also compute the new time step
-    min_physical_dt = max_physical_dt;
+    min_physical_dt = timeline_get_max_physical_dt();
     double Ekin_tot = 0., Epot_tot = 0., Etherm_tot = 0., Etot_tot = 0.;
 #pragma omp parallel for reduction(min : min_physical_dt)                      \
     reduction(+ : Ekin_tot, Epot_tot, Etherm_tot, Etot_tot)
@@ -438,15 +438,15 @@ int main(int argc, char **argv) {
       }
     }
 
+    timeline_set_timestep(min_physical_dt);
+
     // now output energy statistics
-    const double t = current_physical_time();
+    const double t = timeline_get_current_physical_time();
     efile << t << "\t" << Ekin_tot << "\t" << Epot_tot << "\t" << Etherm_tot
           << "\t" << Etot_tot << "\n";
 
-    set_timesteps(min_physical_dt);
-
     // check if we need to output a snapshot
-    if (do_write_snapshot()) {
+    if (timeline_do_write_snapshot()) {
       // write the actual snapshot
       write_snapshot(isnap, t, cells, ncell);
       ++isnap;
@@ -460,12 +460,9 @@ int main(int argc, char **argv) {
       last_stat_time = total_time_interval;
       // yes: display some statistics and a guesstimate of the remaining run
       // time
-      const double pct = current_integer_time * 100. / integer_maxtime;
-      std::cout << get_timestamp() << "\t" << ncell << ": "
-                << "time " << t << " of " << maxtime << " (" << pct << " %)"
-                << std::endl;
-      std::cout << "\t\t\tSystem time step: "
-                << current_integer_dt * time_conversion_factor << std::endl;
+      const double pct = timeline_get_simulated_fraction();
+      std::cout << get_timestamp() << "\t" << ncell << ": ";
+      timeline_print_system_stats();
       const double avg_time_since_last = time_since_last / steps_since_last;
       std::cout << "\t\t\tAverage time per step: " << avg_time_since_last
                 << " s" << std::endl;
@@ -549,7 +546,7 @@ int main(int argc, char **argv) {
 // using the Euler equations and the spatial gradients within the cells
 #pragma omp parallel for
     for (uint_fast32_t i = 0; i < ncell + 2; ++i) {
-      const double half_dt = 0.5 * current_integer_dt * time_conversion_factor;
+      const double half_dt = 0.5 * timeline_get_system_hydro_dt();
       const double rho = cells[i]._rho;
       const double u = cells[i]._u;
       const double P = cells[i]._P;
@@ -570,7 +567,8 @@ int main(int argc, char **argv) {
       }
 
       // add gravity prediction. Handled by Potential.hpp.
-      add_gravitational_prediction(cells[i], half_dt);
+      add_gravitational_prediction(cells[i],
+                                   0.5 * timeline_get_system_gravity_dt());
     }
 
 #elif HYDRO_ORDER == HYDRO_ORDER_1
@@ -590,7 +588,7 @@ int main(int argc, char **argv) {
 // cell at a time
 #pragma omp parallel for
     for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
-      const double dt = current_integer_dt * time_conversion_factor;
+      const double dt = timeline_get_system_hydro_dt();
       // left flux
       {
         // get the variables in the left and right state
@@ -745,12 +743,11 @@ int main(int argc, char **argv) {
 
     // add the spherical source term
     // handled by Spherical.hpp
-    add_spherical_source_term(cells, ncell,
-                              current_integer_dt * time_conversion_factor);
+    add_spherical_source_term(cells, ncell, timeline_get_system_source_dt());
 
     // do the second gravity kick
     // handled by Potential.hpp
-    do_gravity(cells, ncell, current_integer_dt * time_conversion_factor);
+    do_gravity(cells, ncell, timeline_get_system_gravity_dt());
 
     // stop the step timer, and update guesstimate counters
     step_time.stop();
@@ -759,11 +756,11 @@ int main(int argc, char **argv) {
     step_time.reset();
 
     // update the system time
-    do_timestep();
+    timeline_do_timestep();
   }
 
   // write the final snapshots
-  write_snapshot(isnap, current_physical_time(), cells, ncell);
+  write_snapshot(isnap, timeline_get_current_physical_time(), cells, ncell);
 
   // clean up the gravity solver
   free_gravity();

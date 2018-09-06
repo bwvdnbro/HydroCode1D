@@ -37,12 +37,12 @@
  * @param ncell Number of cells in the grid.
  */
 #if POTENTIAL == POTENTIAL_PM_SELF_GRAVITY
-#define init_gravity(ncell)                                                    \
+#define gravity_init(ncell)                                                    \
   double *rho_grav = new double[ncell];                                        \
   double *a_grav = new double[ncell];                                          \
   FFTWGravitySolver pm_solver(ncell, RMAX - RMIN);
 #else
-#define init_gravity(ncell)
+#define gravity_init(ncell)
 #endif
 
 /**

@@ -35,7 +35,7 @@
  * @param cells Cells to initialize.
  * @param ncell Number of cells.
  */
-#define initialize(cells, ncell)                                               \
+#define ic_initialize(cells, ncell)                                            \
   _Pragma("omp parallel for") for (unsigned int i = 1; i < ncell + 1; ++i) {   \
     get_initial_hydro_variables(cells[i]._midpoint, cells[i]._rho,             \
                                 cells[i]._u, cells[i]._P);                     \

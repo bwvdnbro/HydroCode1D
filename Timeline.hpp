@@ -40,28 +40,18 @@
   const double max_physical_dt = initial_dt;                                   \
   uint_fast64_t current_integer_time = 0;                                      \
   uint_fast64_t snaptime = integer_maxtime / NUMBER_OF_SNAPS;                  \
-  uint_fast64_t current_integer_dt = snaptime;                                 \
-  uint_fast64_t isnap = 0;
+  uint_fast64_t current_integer_dt = snaptime;
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
-#define timeline_init()                                                        \
-  const double initial_dt = 0.;                                                \
-  uint_fast64_t isnap = 0;                                                     \
-  const double maxtime = MAXTIME;                                              \
-  const uint_fast64_t integer_maxtime = 0x8000000000000000;                    \
-  uint_fast64_t current_integer_time = 0;                                      \
-  const double max_physical_dt = initial_dt;                                   \
-  uint_fast64_t snaptime = integer_maxtime / NUMBER_OF_SNAPS;                  \
-  uint_fast64_t current_integer_dt = snaptime;                                 \
-  const double time_conversion_factor = maxtime / integer_maxtime;
+#define timeline_init()
 #endif
 
 /**
- * @brief Set the timesteps for all cells.
+ * @brief Set the system time step.
  *
- * @param Maximum allowed physical timestep.
+ * @param Maximum allowed physical timestep (in s).
  */
 #if TIMELINE_TYPE == TIMELINE_NORMAL
-#define set_timesteps(min_physical_dt)                                         \
+#define timeline_set_timestep(min_physical_dt)                                 \
   {                                                                            \
     const uint_fast64_t min_integer_dt =                                       \
         (min_physical_dt / maxtime) * integer_maxtime;                         \
@@ -72,7 +62,65 @@
     }                                                                          \
   }
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
-#define set_timesteps(min_physical_dt)
+#define timeline_set_timestep(min_physical_dt)
+#endif
+
+/**
+ * @brief Do we want a next integration time step?
+ *
+ * @return True if we want to compute another system time step.
+ */
+#if TIMELINE_TYPE == TIMELINE_NORMAL
+#define timeline_next_step() (current_integer_time < integer_maxtime)
+#elif TIMELINE_TYPE == TIMELINE_COMOVING
+#define timeline_next_step() false
+#endif
+
+/**
+ * @brief Get the physical system time step for source terms.
+ *
+ * @return Physical system time step for source terms (in s).
+ */
+#if TIMELINE_TYPE == TIMELINE_NORMAL
+#define timeline_get_system_source_dt()                                        \
+  (current_integer_dt * time_conversion_factor)
+#elif TIMELINE_TYPE == TIMELINE_COMOVING
+#define timeline_get_system_source_dt() 0.
+#endif
+
+/**
+ * @brief Get the physical system time step for gravity terms.
+ *
+ * @return Physical system time step for gravity terms (in s).
+ */
+#if TIMELINE_TYPE == TIMELINE_NORMAL
+#define timeline_get_system_gravity_dt()                                       \
+  (current_integer_dt * time_conversion_factor)
+#elif TIMELINE_TYPE == TIMELINE_COMOVING
+#define timeline_get_system_gravity_dt() 0.
+#endif
+
+/**
+ * @brief Get the physical system time step for hydro terms.
+ *
+ * @return Physical system time step for hydro terms (in s).
+ */
+#if TIMELINE_TYPE == TIMELINE_NORMAL
+#define timeline_get_system_hydro_dt()                                         \
+  (current_integer_dt * time_conversion_factor)
+#elif TIMELINE_TYPE == TIMELINE_COMOVING
+#define timeline_get_system_hydro_dt() 0.
+#endif
+
+/**
+ * @brief Get the maximum allowed physical time step.
+ *
+ * @return Maximum allowed physical time step (in s).
+ */
+#if TIMELINE_TYPE == TIMELINE_NORMAL
+#define timeline_get_max_physical_dt() (max_physical_dt)
+#elif TIMELINE_TYPE == TIMELINE_COMOVING
+#define timeline_get_max_physical_dt() 0.
 #endif
 
 /**
@@ -81,28 +129,67 @@
  * @return Current physical time of the simulation.
  */
 #if TIMELINE_TYPE == TIMELINE_NORMAL
-#define current_physical_time()                                                \
+#define timeline_get_current_physical_time()                                   \
   (current_integer_time * maxtime / integer_maxtime)
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
-#define current_physical_time() 0.
+#define timeline_get_current_physical_time() 0.
 #endif
 
 /**
  * @brief Write a snapshot?
+ *
+ * @return True if we want to write a snapshot dump at the current time.
  */
 #if TIMELINE_TYPE == TIMELINE_NORMAL
-#define do_write_snapshot() (current_integer_time >= isnap * snaptime)
+#define timeline_do_write_snapshot() (current_integer_time >= isnap * snaptime)
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
-#define do_write_snapshot() false
+#define timeline_do_write_snapshot() false
+#endif
+
+/**
+ * @brief Print statistics about the system time stepping.
+ */
+#if TIMELINE_TYPE == TIMELINE_NORMAL
+#define timeline_print_system_stats()                                          \
+  std::cout << "time " << t << " of " << maxtime << " (" << pct << " %)"       \
+            << std::endl;                                                      \
+  std::cout << "\t\t\tSystem time step: "                                      \
+            << current_integer_dt * time_conversion_factor << std::endl;
+#elif TIMELINE_TYPE == TIMELINE_COMOVING
+#define timeline_print_system_stats()
 #endif
 
 /**
  * @brief Step forward in time.
  */
 #if TIMELINE_TYPE == TIMELINE_NORMAL
-#define do_timestep() current_integer_time += current_integer_dt;
+#define timeline_do_timestep() current_integer_time += current_integer_dt;
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
-#define do_timestep()
+#define timeline_do_timestep()
+#endif
+
+/**
+ * @brief Get the fraction of the total simulation time that has already been
+ * simulated.
+ *
+ * @return Already simulated fraction (in %).
+ */
+#if TIMELINE_TYPE == TIMELINE_NORMAL
+#define timeline_get_simulated_fraction()                                      \
+  (current_integer_time * 100. / integer_maxtime)
+#elif TIMELINE_TYPE == TIMELINE_COMOVING
+#define timeline_get_simulated_fraction() 100.
+#endif
+
+/**
+ * @brief Get the index of the first snapshot that will be written.
+ *
+ * @return Index of the first snapshot file.
+ */
+#if TIMELINE_TYPE == TIMELINE_NORMAL
+#define timeline_get_initial_snap_index() 0
+#elif TIMELINE_TYPE == TIMELINE_COMOVING
+#define timeline_get_initial_snap_index() 0
 #endif
 
 #endif // TIMELINE_HPP
