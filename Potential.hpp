@@ -107,6 +107,17 @@
     for (uint_fast32_t i = 1; i < ncell + 1; ++i) {                            \
       cells[i]._a = a_grav[i - 1];                                             \
     }                                                                          \
+    /* Now apply gravity to each cell. */                                      \
+    _Pragma("omp parallel for") for (uint_fast32_t i = 1; i < ncell + 1;       \
+                                     ++i) {                                    \
+      if (cells[i]._m > 0.) {                                                  \
+        const double gravfac = 0.5 * dt * cells[i]._a;                         \
+        cells[i]._E += gravfac * cells[i]._p;                                  \
+        cells[i]._p += gravfac * cells[i]._m;                                  \
+      }                                                                        \
+      assert_condition(cells[i]._E >= 0., "cells[%" PRIiFAST32 "]._E = %g", i, \
+                       cells[i]._E);                                           \
+    }                                                                          \
   }
 #elif POTENTIAL == POTENTIAL_NONE
 #define do_gravity(cells, ncell, dt)
