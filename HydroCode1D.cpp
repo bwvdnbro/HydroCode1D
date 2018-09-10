@@ -309,6 +309,9 @@ int main(int argc, char **argv) {
   // this bit is handled by IC.hpp, and user specific code in UserInput.hpp
   ic_initialize(cells, ncell);
 
+  // convert to comoving variables if applicable
+  timeline_do_variable_conversion(cells, ncell);
+
   // Courant factor for the CFL time step criterion
   // we use a very conservative value
   const double courant_factor = COURANT_FACTOR;

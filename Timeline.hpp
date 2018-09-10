@@ -55,6 +55,10 @@
   uint_fast64_t current_integer_dt = 0;                                        \
   double source_dt, gravity_dt, hydro_dt;                                      \
   uint_fast64_t snaptime = integer_maxtime / NUMBER_OF_SNAPS;                  \
+  const double time_conversion_factor_inv =                                    \
+      static_cast<double>(integer_maxtime) / maxtime;                          \
+  const double time_conversion_factor =                                        \
+      maxtime / static_cast<double>(integer_maxtime);                          \
   (void)source_dt, (void)gravity_dt;
 #endif
 
@@ -77,11 +81,10 @@
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
 #define timeline_set_timestep(min_physical_dt)                                 \
   {                                                                            \
-    const uint_fast64_t min_integer_dt =                                       \
-        (-std::log(cosmo.get_scale_factor_interval(current_scale_factor,       \
-                                                   min_physical_dt)) /         \
-         maxtime) *                                                            \
-        integer_maxtime;                                                       \
+    const uint_fast64_t min_integer_dt = static_cast<uint_fast64_t>(           \
+        -std::log(cosmo.get_scale_factor_interval(current_scale_factor,        \
+                                                  min_physical_dt)) *          \
+        time_conversion_factor_inv);                                           \
     current_integer_dt = round_power2_down(min_integer_dt);                    \
     while ((integer_maxtime - current_integer_time) % current_integer_dt >     \
            0) {                                                                \
@@ -89,9 +92,9 @@
     }                                                                          \
     const double a_stop =                                                      \
         std::exp(std::log(current_scale_factor) +                              \
-                 (maxtime * current_integer_dt) / integer_maxtime);            \
+                 current_integer_dt * time_conversion_factor);                 \
     source_dt = cosmo.get_factor_a2inv(current_scale_factor, a_stop);          \
-    gravity_dt = cosmo.get_factor_a2inv(current_scale_factor, a_stop);         \
+    gravity_dt = cosmo.get_factor_ainv(current_scale_factor, a_stop);          \
     hydro_dt = cosmo.get_factor_a2inv(current_scale_factor, a_stop);           \
   }
 #endif
@@ -225,6 +228,31 @@
 #define timeline_get_initial_snap_index() 0
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
 #define timeline_get_initial_snap_index() 0
+#endif
+
+#if TIMELINE_TYPE == TIMELINE_NORMAL
+#define timeline_do_variable_conversion(cells, ncell)
+#elif TIMELINE_TYPE == TIMELINE_COMOVING
+#define timeline_do_variable_conversion(cells, ncell)                          \
+  {                                                                            \
+    const double astart = 0.00990099;                                          \
+    const double astart2 = astart * astart;                                    \
+    const double astart3 = astart2 * astart;                                   \
+    const double astart5 = astart2 * astart3;                                  \
+    const double astartinv = 1. / astart;                                      \
+    const double astartinv3 = 1. / astart3;                                    \
+    _Pragma("omp parallel for") for (unsigned int i = 1; i < ncell + 1; ++i) { \
+      cells[i]._rho *= astart3;                                                \
+      cells[i]._P *= astart5;                                                  \
+      cells[i]._u *= astart;                                                   \
+      cells[i]._V *= astartinv;                                                \
+      cells[i]._midpoint *= astartinv;                                         \
+      cells[i]._lowlim *= astartinv;                                           \
+      cells[i]._uplim *= astartinv;                                            \
+      cells[i]._V_real *= astartinv3;                                          \
+      cells[i]._V_real_half *= astartinv3;                                     \
+    }                                                                          \
+  }
 #endif
 
 #endif // TIMELINE_HPP

@@ -70,6 +70,9 @@ private:
   /*! @brief Current scale factor. */
   double _a_current;
 
+  /*! @brief @f$\frac{1}{a}@f$ factor interpolation table. */
+  double *_table_ainv;
+
   /*! @brief @f$\frac{1}{a^2}@f$ factor interpolation table. */
   double *_table_a2inv;
 
@@ -133,6 +136,22 @@ private:
    * @return Hubble constant (in s^-1).
    */
   inline double H(const double a) const { return _H0 * E(a); }
+
+  /**
+   * @brief Get the integrand of the @f$\frac{1}{a}@f$ factor.
+   *
+   * @param a Scale factor.
+   * @param param Void-cast Cosmology pointer.
+   * @return Integrand value.
+   */
+  inline static double integrand_ainv(const double a, void *param) {
+
+    const Cosmology *c = reinterpret_cast<Cosmology *>(param);
+
+    const double H = c->H(a);
+    const double ainv = 1. / a;
+    return (1. / H) * ainv * ainv;
+  }
 
   /**
    * @brief Get the integrand of the @f$\frac{1}{a^2}@f$ factor.
@@ -203,6 +222,7 @@ public:
         _H0(h * HUBBLE_IN_SI), _log_amin(std::log(amin)),
         _log_amax(std::log(amax)), _a_current(amin) {
 
+    _table_ainv = new double[COSMOLOGY_NTAB];
     _table_a2inv = new double[COSMOLOGY_NTAB];
     _table_a = new double[COSMOLOGY_NTAB];
     _table_time = new double[COSMOLOGY_NTAB];
@@ -218,7 +238,14 @@ public:
 
     double result, abserr;
 
-    gsl_function gsl_F = {&integrand_a2inv, this};
+    gsl_function gsl_F = {&integrand_ainv, this};
+    for (uint_fast32_t i = 0; i < COSMOLOGY_NTAB; ++i) {
+      gsl_integration_qag(&gsl_F, amin, atable[i], 0., 1.e-10, COSMOLOGY_NTAB,
+                          GSL_INTEG_GAUSS61, gsl_ws, &result, &abserr);
+      _table_ainv[i] = result;
+    }
+
+    gsl_F.function = &integrand_a2inv;
     for (uint_fast32_t i = 0; i < COSMOLOGY_NTAB; ++i) {
       gsl_integration_qag(&gsl_F, amin, atable[i], 0., 1.e-10, COSMOLOGY_NTAB,
                           GSL_INTEG_GAUSS61, gsl_ws, &result, &abserr);
@@ -250,9 +277,25 @@ public:
    * @brief Destructor.
    */
   inline ~Cosmology() {
+    delete[] _table_ainv;
     delete[] _table_a2inv;
     delete[] _table_a;
     delete[] _table_time;
+  }
+
+  /**
+   * @brief Get the @f$\frac{1}{a}@f$ factor for the given scale factor step.
+   *
+   * @param astart Scale factor at the start of the step.
+   * @param astop Scale factor at the end of the step.
+   * @return Integrated factor during the step.
+   */
+  inline double get_factor_ainv(const double astart, const double astop) const {
+
+    return interpolate(_table_ainv, std::log(astop), _log_amin, _log_amax,
+                       COSMOLOGY_NTAB) -
+           interpolate(_table_ainv, std::log(astart), _log_amin, _log_amax,
+                       COSMOLOGY_NTAB);
   }
 
   /**
