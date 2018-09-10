@@ -356,7 +356,7 @@ public:
   inline double get_scale_factor_interval(const double a,
                                           const double dt) const {
 
-    return a * H(a) * dt;
+    return H(a) * dt;
   }
 
   /**

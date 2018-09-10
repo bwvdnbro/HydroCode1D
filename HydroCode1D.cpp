@@ -117,11 +117,15 @@ void add_code_block_to_file(std::ofstream &ofile) {
  * @brief Write a snapshot with the given index.
  *
  * @param istep Index of the snapshot file.
+ * @param timestamp Timestamp to add to the snapshot file.
  * @param cells Cells to write.
  * @param ncell Number of cells.
+ * @param velocity_conversion_factor (Optional) conversion factor for the
+ * velocities.
  */
-void write_snapshot(uint_fast64_t istep, double time, const Cell *cells,
-                    const unsigned int ncell) {
+void write_snapshot(uint_fast64_t istep, std::string timestamp,
+                    const Cell *cells, const unsigned int ncell,
+                    const double velocity_conversion_factor) {
   std::stringstream filename;
   filename << "snapshot_";
   filename.fill('0');
@@ -130,13 +134,14 @@ void write_snapshot(uint_fast64_t istep, double time, const Cell *cells,
   filename << ".txt";
   std::cout << "Writing snapshot " << filename.str() << std::endl;
   std::ofstream ofile(filename.str().c_str());
-  ofile << "# time: " << time << " s\n";
+  ofile << timestamp << "\n";
   ofile << "#\n";
   add_code_block_to_file(ofile);
   ofile << "# x (m)\trho (kg m^-3)\tu (m s^-1)\tP (kg m^-1 s^-2)\n";
   for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
-    ofile << cells[i]._midpoint << "\t" << cells[i]._rho << "\t" << cells[i]._u
-          << "\t" << cells[i]._P << "\n";
+    ofile << cells[i]._midpoint << "\t" << cells[i]._rho << "\t"
+          << (cells[i]._u * velocity_conversion_factor) << "\t" << cells[i]._P
+          << "\n";
   }
   ofile.close();
 }
@@ -451,7 +456,10 @@ int main(int argc, char **argv) {
     // check if we need to output a snapshot
     if (timeline_do_write_snapshot()) {
       // write the actual snapshot
-      write_snapshot(isnap, t, cells, ncell);
+      std::string timestamp;
+      timeline_get_timestamp(timestamp);
+      write_snapshot(isnap, timestamp, cells, ncell,
+                     timeline_get_velocity_factor());
       ++isnap;
     }
 
@@ -763,7 +771,12 @@ int main(int argc, char **argv) {
   }
 
   // write the final snapshots
-  write_snapshot(isnap, timeline_get_current_physical_time(), cells, ncell);
+  {
+    std::string timestamp;
+    timeline_get_timestamp(timestamp);
+    write_snapshot(isnap, timestamp, cells, ncell,
+                   timeline_get_velocity_factor());
+  }
 
   // clean up the gravity solver
   free_gravity();

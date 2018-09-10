@@ -82,8 +82,8 @@
 #define timeline_set_timestep(min_physical_dt)                                 \
   {                                                                            \
     const uint_fast64_t min_integer_dt = static_cast<uint_fast64_t>(           \
-        -std::log(cosmo.get_scale_factor_interval(current_scale_factor,        \
-                                                  min_physical_dt)) *          \
+        cosmo.get_scale_factor_interval(current_scale_factor,                  \
+                                        min_physical_dt) *                     \
         time_conversion_factor_inv);                                           \
     current_integer_dt = round_power2_down(min_integer_dt);                    \
     while ((integer_maxtime - current_integer_time) % current_integer_dt >     \
@@ -154,7 +154,7 @@
 #if TIMELINE_TYPE == TIMELINE_NORMAL
 #define timeline_get_max_physical_dt() (max_physical_dt)
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
-#define timeline_get_max_physical_dt() 1.e100
+#define timeline_get_max_physical_dt() 1.e10
 #endif
 
 /**
@@ -191,7 +191,12 @@
   std::cout << "\t\t\tSystem time step: "                                      \
             << current_integer_dt * time_conversion_factor << std::endl;
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
-#define timeline_print_system_stats()
+#define timeline_print_system_stats()                                          \
+  std::cout << "redshift " << (1. / current_scale_factor - 1.) << std::endl;   \
+  std::cout << "\t\t\tSystem time step: "                                      \
+            << current_integer_dt * time_conversion_factor << std::endl;       \
+  std::cout << "\t\t\tHydro step: " << hydro_dt << std::endl;                  \
+  std::cout << "\t\t\tGravity step: " << gravity_dt << std::endl;
 #endif
 
 /**
@@ -230,28 +235,53 @@
 #define timeline_get_initial_snap_index() 0
 #endif
 
+/**
+ * @brief Convert all cell variables to internal variables.
+ *
+ * This method only changes the cell variables if comoving integration is used.
+ */
 #if TIMELINE_TYPE == TIMELINE_NORMAL
 #define timeline_do_variable_conversion(cells, ncell)
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
 #define timeline_do_variable_conversion(cells, ncell)                          \
   {                                                                            \
     const double astart = 0.00990099;                                          \
-    const double astart2 = astart * astart;                                    \
-    const double astart3 = astart2 * astart;                                   \
-    const double astart5 = astart2 * astart3;                                  \
-    const double astartinv = 1. / astart;                                      \
-    const double astartinv3 = 1. / astart3;                                    \
     _Pragma("omp parallel for") for (unsigned int i = 1; i < ncell + 1; ++i) { \
-      cells[i]._rho *= astart3;                                                \
-      cells[i]._P *= astart5;                                                  \
       cells[i]._u *= astart;                                                   \
-      cells[i]._V *= astartinv;                                                \
-      cells[i]._midpoint *= astartinv;                                         \
-      cells[i]._lowlim *= astartinv;                                           \
-      cells[i]._uplim *= astartinv;                                            \
-      cells[i]._V_real *= astartinv3;                                          \
-      cells[i]._V_real_half *= astartinv3;                                     \
     }                                                                          \
+  }
+#endif
+
+/**
+ * @brief Get the conversion factor from internal velocity to peculiar velocity.
+ *
+ * @return Conversion factor.
+ */
+#if TIMELINE_TYPE == TIMELINE_NORMAL
+#define timeline_get_velocity_factor() 1.
+#elif TIMELINE_TYPE == TIMELINE_COMOVING
+#define timeline_get_velocity_factor() (1. / current_scale_factor)
+#endif
+
+/**
+ * @brief Get the timestamp to add to the snapshot files.
+ *
+ * @param timestamp Variable to set.
+ */
+#if TIMELINE_TYPE == TIMELINE_NORMAL
+#define timeline_get_timestamp(timestamp)                                      \
+  {                                                                            \
+    std::stringstream stampstr;                                                \
+    stampstr << "# time: "                                                     \
+             << (current_integer_time * maxtime / integer_maxtime) << " s";    \
+    timestamp = stampstr.str();                                                \
+  }
+#elif TIMELINE_TYPE == TIMELINE_COMOVING
+#define timeline_get_timestamp(timestamp)                                      \
+  {                                                                            \
+    std::stringstream stampstr;                                                \
+    stampstr << "# redshift: " << (1. / current_scale_factor - 1.);            \
+    timestamp = stampstr.str();                                                \
   }
 #endif
 
