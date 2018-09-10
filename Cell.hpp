@@ -58,6 +58,8 @@ public:
   double _p;
   /*! @brief Total energy (in internal units of M L^2 T^-2). */
   double _E;
+  /*! @brief Mass flux (for gravity; in internal units of M L^2 T). */
+  double _mflux;
 
   // geometrical quantities
 

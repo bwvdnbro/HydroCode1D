@@ -40,7 +40,7 @@
 #define gravity_init(ncell)                                                    \
   double *rho_grav = new double[ncell];                                        \
   double *a_grav = new double[ncell];                                          \
-  FFTWGravitySolver pm_solver(ncell, RMAX - RMIN);
+  FFTWGravitySolver pm_solver(ncell, RMAX - RMIN, G_INTERNAL);
 #else
 #define gravity_init(ncell)
 #endif

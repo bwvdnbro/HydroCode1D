@@ -120,20 +120,24 @@ public:
     fftw_execute(_backward_plan);
 
     // compute accelerations
+    // we factor in the fact that applying forward + backward transform results
+    // in an additional factor _ncell
+    // no idea what happens to the factor 1/2...
+    const double dxinv = 1. / _box_length;
     double phi_m, phi_p;
     // first element: apply periodic boundary
     phi_m = _fftw_array[_ncell - 1][0];
     phi_p = _fftw_array[1][0];
-    a[0] = -0.5 * (phi_p - phi_m);
+    a[0] = -(phi_p - phi_m) * dxinv;
     // other elements (except last)
     for (uint_fast32_t i = 1; i < _ncell - 1; ++i) {
       phi_m = _fftw_array[i - 1][0];
       phi_p = _fftw_array[i + 1][0];
-      a[i] = -0.5 * (phi_p - phi_m);
+      a[i] = -(phi_p - phi_m) * dxinv;
     }
     // last element
     phi_m = _fftw_array[_ncell - 2][0];
     phi_p = _fftw_array[0][0];
-    a[_ncell - 1] = -0.5 * (phi_p - phi_m);
+    a[_ncell - 1] = -(phi_p - phi_m) * dxinv;
   }
 };

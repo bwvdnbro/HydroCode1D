@@ -154,7 +154,7 @@
 #if TIMELINE_TYPE == TIMELINE_NORMAL
 #define timeline_get_max_physical_dt() (max_physical_dt)
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
-#define timeline_get_max_physical_dt() 1.e10
+#define timeline_get_max_physical_dt() 1.e9
 #endif
 
 /**

@@ -65,7 +65,10 @@ inline void get_initial_hydro_variables(const double x, double &rho, double &u,
   const double T = T_i * std::pow((rho / rho_0), 2. / 3.);
 
   // pressure
-  P = rho * T * BOLTZMANN_K_IN_SI / HYDROGEN_MASS_IN_SI;
+  const double a = 1. / (z_i + 1.);
+  const double a2 = a * a;
+  // factor 2 because of mean particle mass being 0.5 * hydrogen_mass
+  P = 2. * rho * T * BOLTZMANN_K_IN_SI / HYDROGEN_MASS_IN_SI * a2;
 }
 
 #if BOUNDARIES == BOUNDARIES_CUSTOM

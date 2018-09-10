@@ -137,11 +137,11 @@ void write_snapshot(uint_fast64_t istep, std::string timestamp,
   ofile << timestamp << "\n";
   ofile << "#\n";
   add_code_block_to_file(ofile);
-  ofile << "# x (m)\trho (kg m^-3)\tu (m s^-1)\tP (kg m^-1 s^-2)\n";
+  ofile << "# x (m)\trho (kg m^-3)\tu (m s^-1)\tP (kg m^-1 s^-2)\ta (m s^-2)\n";
   for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
     ofile << cells[i]._midpoint << "\t" << cells[i]._rho << "\t"
           << (cells[i]._u * velocity_conversion_factor) << "\t" << cells[i]._P
-          << "\n";
+          << "\t" << cells[i]._a << "\n";
   }
   ofile.close();
 }
@@ -401,6 +401,8 @@ int main(int argc, char **argv) {
 #pragma omp parallel for reduction(min : min_physical_dt)                      \
     reduction(+ : Ekin_tot, Epot_tot, Etherm_tot, Etot_tot)
     for (uint_fast32_t i = 1; i < ncell + 1; ++i) {
+
+      cells[i]._mflux = 0.;
 
       assert_condition(cells[i]._m >= 0., "cells[%" PRIiFAST32 "]._m = %g", i,
                        cells[i]._m);
@@ -665,6 +667,7 @@ int main(int argc, char **argv) {
         cells[i]._m += dt * mflux;
         cells[i]._p += dt * pflux;
         cells[i]._E += dt * Eflux;
+        cells[i]._mflux += mflux * dmin;
 
         assert_condition(cells[i]._m >= 0., "cells[%" PRIiFAST32 "]._m = %g", i,
                          cells[i]._m);
@@ -740,6 +743,7 @@ int main(int argc, char **argv) {
         cells[i]._m -= dt * mflux;
         cells[i]._p -= dt * pflux;
         cells[i]._E -= dt * Eflux;
+        cells[i]._mflux -= mflux * dmin;
 
         assert_condition(cells[i]._m >= 0., "cells[%" PRIiFAST32 "]._m = %g", i,
                          cells[i]._m);
