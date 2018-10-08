@@ -40,7 +40,7 @@
 #define gravity_init(ncell)                                                    \
   double *rho_grav = new double[ncell];                                        \
   double *a_grav = new double[ncell];                                          \
-  FFTWGravitySolver pm_solver(ncell, RMAX - RMIN, G_INTERNAL);
+  FFTWGravitySolver pm_solver(ncell, RMAX - RMIN);
 #else
 #define gravity_init(ncell)
 #endif
@@ -61,19 +61,22 @@
  *
  * @param cells Cells to update.
  * @param ncell Number of cells.
+ * @param dt_momentum Momentum update time step.
+ * @param dt_energy Energy update time step.
  */
 #if POTENTIAL == POTENTIAL_POINT_MASS
-#define do_gravity(cells, ncell, dt) /* add gravitational acceleration */      \
+#define do_gravity(cells, ncell, dt_momentum,                                  \
+                   dt_energy) /* add gravitational acceleration */             \
   _Pragma("omp parallel for") for (uint_fast32_t i = 1; i < ncell + 1; ++i) {  \
     const double r = cells[i]._midpoint;                                       \
     const double a = -G_INTERNAL * MASS_POINT_MASS / (r * r);                  \
     cells[i]._a = a;                                                           \
     cells[i]._pot = -G_INTERNAL * MASS_POINT_MASS / r;                         \
     const double m = cells[i]._V * cells[i]._rho;                              \
-    cells[i]._p += 0.5 * dt * cells[i]._a * m;                                 \
+    cells[i]._p += 0.5 * dt_momentum * cells[i]._a * m;                        \
   }
 #elif POTENTIAL == POTENTIAL_SELF_GRAVITY
-#define do_gravity(cells, ncell, dt)                                           \
+#define do_gravity(cells, ncell, dt_momentum, dt_energy)                       \
   {                                                                            \
     double Mtot = 0.;                                                          \
     /* Get the acceleration for each cell (needs to be evaluated in a fixed    \
@@ -89,31 +92,32 @@
     _Pragma("omp parallel for") for (uint_fast32_t i = 1; i < ncell + 1;       \
                                      ++i) {                                    \
       if (cells[i]._m > 0.) {                                                  \
-        const double gravfac = 0.5 * dt * cells[i]._a;                         \
-        cells[i]._E += gravfac * cells[i]._p;                                  \
-        cells[i]._p += gravfac * cells[i]._m;                                  \
+        const double gravfac = 0.5 * cells[i]._a;                              \
+        cells[i]._E += gravfac * cells[i]._p * dt_energy;                      \
+        cells[i]._p += gravfac * cells[i]._m * dt_momentum;                    \
       }                                                                        \
       assert_condition(cells[i]._E >= 0., "cells[%" PRIiFAST32 "]._E = %g", i, \
                        cells[i]._E);                                           \
     }                                                                          \
   }
 #elif POTENTIAL == POTENTIAL_PM_SELF_GRAVITY
-#define do_gravity(cells, ncell, dt)                                           \
+#define do_gravity(cells, ncell, dt_momentum, dt_energy)                       \
   {                                                                            \
     for (uint_fast32_t i = 1; i < ncell + 1; ++i) {                            \
       rho_grav[i - 1] = cells[i]._rho;                                         \
     }                                                                          \
     pm_solver.compute_accelerations(rho_grav, a_grav);                         \
     for (uint_fast32_t i = 1; i < ncell + 1; ++i) {                            \
-      cells[i]._a = a_grav[i - 1];                                             \
+      cells[i]._a = a_grav[i - 1] * G_INTERNAL;                                \
     }                                                                          \
     /* Now apply gravity to each cell. */                                      \
     _Pragma("omp parallel for") for (uint_fast32_t i = 1; i < ncell + 1;       \
                                      ++i) {                                    \
       if (cells[i]._m > 0.) {                                                  \
-        const double gravfac = 0.5 * dt * cells[i]._a;                         \
-        cells[i]._E += gravfac * cells[i]._p;                                  \
-        cells[i]._p += gravfac * cells[i]._m;                                  \
+        const double gravfac = 0.5 * cells[i]._a;                              \
+        cells[i]._E += gravfac * cells[i]._p * dt_momentum;                    \
+        cells[i]._E += gravfac * cells[i]._mflux * dt_energy;                  \
+        cells[i]._p += gravfac * cells[i]._m * dt_momentum;                    \
       }                                                                        \
       assert_condition(cells[i]._E >= 0., "cells[%" PRIiFAST32 "]._E = %g", i, \
                        cells[i]._E);                                           \
@@ -132,7 +136,7 @@
 #if POTENTIAL != POTENTIAL_NONE
 #define add_gravitational_prediction(cell, half_dt)                            \
   if (cell._rho > 0.) {                                                        \
-    cell._u += half_dt * cell._a;                                              \
+    cell._u += 0. * half_dt * cell._a;                                         \
   }
 #else
 #define add_gravitational_prediction(cell, half_dt)

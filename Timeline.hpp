@@ -53,13 +53,13 @@
   const double maxtime = -std::log(0.00990099);                                \
   uint_fast64_t current_integer_time = 0;                                      \
   uint_fast64_t current_integer_dt = 0;                                        \
-  double source_dt, gravity_dt, hydro_dt;                                      \
+  double source_dt, gravity_dt_momentum, gravity_dt_energy, hydro_dt;          \
   uint_fast64_t snaptime = integer_maxtime / NUMBER_OF_SNAPS;                  \
   const double time_conversion_factor_inv =                                    \
       static_cast<double>(integer_maxtime) / maxtime;                          \
   const double time_conversion_factor =                                        \
       maxtime / static_cast<double>(integer_maxtime);                          \
-  (void)source_dt, (void)gravity_dt;
+  (void)source_dt, (void)gravity_dt_momentum, (void)gravity_dt_energy;
 #endif
 
 /**
@@ -94,7 +94,8 @@
         std::exp(std::log(current_scale_factor) +                              \
                  current_integer_dt * time_conversion_factor);                 \
     source_dt = cosmo.get_factor_a2inv(current_scale_factor, a_stop);          \
-    gravity_dt = cosmo.get_factor_ainv(current_scale_factor, a_stop);          \
+    gravity_dt_momentum = cosmo.get_factor_ainv(current_scale_factor, a_stop); \
+    gravity_dt_energy = cosmo.get_factor_a(current_scale_factor, a_stop);      \
     hydro_dt = cosmo.get_factor_a2inv(current_scale_factor, a_stop);           \
   }
 #endif
@@ -123,15 +124,29 @@
 #endif
 
 /**
- * @brief Get the physical system time step for gravity terms.
+ * @brief Get the physical system time step for gravity terms involving the
+ * momentum.
  *
  * @return Physical system time step for gravity terms (in s).
  */
 #if TIMELINE_TYPE == TIMELINE_NORMAL
-#define timeline_get_system_gravity_dt()                                       \
+#define timeline_get_system_gravity_dt_momentum()                              \
   (current_integer_dt * time_conversion_factor)
 #elif TIMELINE_TYPE == TIMELINE_COMOVING
-#define timeline_get_system_gravity_dt() gravity_dt
+#define timeline_get_system_gravity_dt_momentum() gravity_dt_momentum
+#endif
+
+/**
+ * @brief Get the physical system time step for gravity terms involving the
+ * energy.
+ *
+ * @return Physical system time step for gravity terms (in s).
+ */
+#if TIMELINE_TYPE == TIMELINE_NORMAL
+#define timeline_get_system_gravity_dt_energy()                                \
+  (current_integer_dt * time_conversion_factor)
+#elif TIMELINE_TYPE == TIMELINE_COMOVING
+#define timeline_get_system_gravity_dt_energy() gravity_dt_energy
 #endif
 
 /**
@@ -196,7 +211,10 @@
   std::cout << "\t\t\tSystem time step: "                                      \
             << current_integer_dt * time_conversion_factor << std::endl;       \
   std::cout << "\t\t\tHydro step: " << hydro_dt << std::endl;                  \
-  std::cout << "\t\t\tGravity step: " << gravity_dt << std::endl;
+  std::cout << "\t\t\tGravity step (momentum): " << gravity_dt_momentum        \
+            << std::endl;                                                      \
+  std::cout << "\t\t\tGravity step (energy): " << gravity_dt_energy            \
+            << std::endl;
 #endif
 
 /**

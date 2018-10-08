@@ -41,9 +41,6 @@ private:
   /*! @brief FFTW plan for the backward transform. */
   fftw_plan _backward_plan;
 
-  /*! @brief Value of Newton's gravitational constant. */
-  const double _G;
-
   /*! @brief Number of cells. */
   const uint_fast32_t _ncell;
 
@@ -56,11 +53,9 @@ public:
    *
    * @param ncell Number of cells in the grid.
    * @param box_length Length of the box (in m).
-   * @param G Value for Newton's gravitational constant (in N m^2 kg^-2).
    */
-  inline FFTWGravitySolver(const uint_fast32_t ncell, const double box_length,
-                           const double G = 6.674e-11)
-      : _G(G), _ncell(ncell), _box_length(box_length) {
+  inline FFTWGravitySolver(const uint_fast32_t ncell, const double box_length)
+      : _ncell(ncell), _box_length(box_length) {
 
     _fftw_array = reinterpret_cast<fftw_complex *>(
         fftw_malloc(sizeof(fftw_complex) * ncell));
@@ -102,16 +97,9 @@ public:
     _fftw_array[0][0] = 0.;
     _fftw_array[0][1] = 0.;
     // positive k modes
-    for (uint_fast32_t i = 1; i <= _ncell / 2; ++i) {
-      const double k = 2. * M_PI * i / _box_length;
-      const double kfac = -4. * M_PI * _G / (k * k);
-      _fftw_array[i][0] *= kfac;
-      _fftw_array[i][1] *= kfac;
-    }
-    // negative k modes
-    for (uint_fast32_t i = _ncell / 2 + 1; i < _ncell; ++i) {
-      const double k = 2. * M_PI * (i - _ncell) / _box_length;
-      const double kfac = -4. * M_PI * _G / (k * k);
+    for (uint_fast32_t i = 1; i < _ncell; ++i) {
+      const double k = (i < _ncell / 2) ? i : i - _ncell;
+      const double kfac = -1. / (k * k);
       _fftw_array[i][0] *= kfac;
       _fftw_array[i][1] *= kfac;
     }
@@ -122,8 +110,7 @@ public:
     // compute accelerations
     // we factor in the fact that applying forward + backward transform results
     // in an additional factor _ncell
-    // no idea what happens to the factor 1/2...
-    const double dxinv = 1. / _box_length;
+    const double dxinv = _box_length * M_1_PI;
     double phi_m, phi_p;
     // first element: apply periodic boundary
     phi_m = _fftw_array[_ncell - 1][0];

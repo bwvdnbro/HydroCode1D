@@ -391,7 +391,8 @@ int main(int argc, char **argv) {
     add_spherical_source_term(cells, ncell, timeline_get_system_source_dt());
 
     // do first gravity kick, handled by Potential.hpp
-    do_gravity(cells, ncell, timeline_get_system_gravity_dt());
+    do_gravity(cells, ncell, timeline_get_system_gravity_dt_momentum(),
+               timeline_get_system_gravity_dt_energy());
 
     // update the primitive variables based on the values of the conserved
     // variables and the current cell volume
@@ -580,8 +581,8 @@ int main(int argc, char **argv) {
       }
 
       // add gravity prediction. Handled by Potential.hpp.
-      add_gravitational_prediction(cells[i],
-                                   0.5 * timeline_get_system_gravity_dt());
+      add_gravitational_prediction(
+          cells[i], 0.5 * timeline_get_system_gravity_dt_momentum());
     }
 
 #elif HYDRO_ORDER == HYDRO_ORDER_1
@@ -762,7 +763,8 @@ int main(int argc, char **argv) {
 
     // do the second gravity kick
     // handled by Potential.hpp
-    do_gravity(cells, ncell, timeline_get_system_gravity_dt());
+    do_gravity(cells, ncell, timeline_get_system_gravity_dt_momentum(),
+               timeline_get_system_gravity_dt_energy());
 
     // stop the step timer, and update guesstimate counters
     step_time.stop();
