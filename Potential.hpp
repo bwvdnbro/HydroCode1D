@@ -124,7 +124,7 @@
     }                                                                          \
   }
 #elif POTENTIAL == POTENTIAL_NONE
-#define do_gravity(cells, ncell, dt)
+#define do_gravity(cells, ncell, dt_momentum, dt_energy) ;
 #endif
 
 /**
